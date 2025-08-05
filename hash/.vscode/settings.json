@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "stdint.h": "c",
+        "arraylist.h": "c",
+        "linkedlist.h": "c",
+        "stdlib.h": "c",
+        "stdbool.h": "c",
+        "queue_stack.h": "c",
+        "definition.h": "c",
+        "string.h": "c"
+    }
+}

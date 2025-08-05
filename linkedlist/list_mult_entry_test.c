@@ -11,13 +11,13 @@ typedef struct node{
 
 typedef struct list{
     node * head;
-    node * last_created;
+    node * tail;
 }list;
 
 list * create_list(){
     list * new_list = (list *)malloc(sizeof(list));
     new_list->head = NULL;
-    new_list->last_created = NULL;
+    new_list->tail = NULL;
     return new_list;
 }
 
@@ -33,13 +33,13 @@ node * search_node(list*curr_list, char*lexem){
 }
 
 node * new_node(list * curr_list, char*lexem, char*tok, char*attr){
-    if(curr_list->last_created != NULL){
+    if(curr_list->tail != NULL){
         node * refer = search_node(curr_list, lexem);
         if(refer == NULL){
-            refer = curr_list->last_created;
+            refer = curr_list->tail;
             refer->next = (node *)malloc(sizeof(node));
             refer = refer->next;
-            curr_list->last_created = refer;
+            curr_list->tail = refer;
             strcpy(refer->lexeme, lexem);
             strcpy(refer->token, tok);
             strcpy(refer->attribute, attr);
@@ -53,8 +53,8 @@ node * new_node(list * curr_list, char*lexem, char*tok, char*attr){
     }
     else{
         curr_list->head = (node *)malloc(sizeof(node));
-        curr_list->last_created = curr_list->head;
-        node * refer = curr_list->last_created;
+        curr_list->tail = curr_list->head;
+        node * refer = curr_list->tail;
         strcpy(refer->lexeme, lexem);
         strcpy(refer->token, tok);
         strcpy(refer->attribute, attr);
@@ -70,7 +70,6 @@ void write_list(list*curr_list){
         printf("%s | %s | %s\n", writer->lexeme, writer->token, writer->attribute);
         writer=writer->next;
     }
-    printf("-----------------------------\n");
 }
 
 void write_id_list(list*curr_list){

@@ -63,34 +63,34 @@ void write_list(list*curr_list){
     printf("-----------------------------\n");
 }
 
-int main(){
-    list * my_list = create_list();
-    int answ = 0;
-    int value;
-    while(answ!=5){
-        printf("What would you like to do?\n   1- Input new value (press 1);\n   2- Search for value (press 2);\n   3- Write list of values (press 3);\n   X- Exit (press 5);\n");
-        scanf("%d", &answ);
-        if(answ==1){
-            printf("What is the value you'd like to input?\n");
-            scanf("%d", &value);
-            new_node(my_list, value);
-        }
-        else if(answ==2){
-            printf("Which one would you like to search from the list?\n");
-            scanf("%d", &value);
-            search_node(my_list, value);
-        }
-        else if(answ==3){
-            write_list(my_list);
-        }
-        else if(answ==5){
-            printf("Bye bye!");
-            break;
-        }
-        else{
-            printf("Please input a valid answer...\n");
-        }
-    }
+// int main(){
+//     list * my_list = create_list();
+//     int answ = 0;
+//     int value;
+//     while(answ!=5){
+//         printf("What would you like to do?\n   1- Input new value (press 1);\n   2- Search for value (press 2);\n   3- Write list of values (press 3);\n   X- Exit (press 5);\n");
+//         scanf("%d", &answ);
+//         if(answ==1){
+//             printf("What is the value you'd like to input?\n");
+//             scanf("%d", &value);
+//             new_node(my_list, value);
+//         }
+//         else if(answ==2){
+//             printf("Which one would you like to search from the list?\n");
+//             scanf("%d", &value);
+//             search_node(my_list, value);
+//         }
+//         else if(answ==3){
+//             write_list(my_list);
+//         }
+//         else if(answ==5){
+//             printf("Bye bye!");
+//             break;
+//         }
+//         else{
+//             printf("Please input a valid answer...\n");
+//         }
+//     }
 
-    return 0;
-}
+//     return 0;
+// }
