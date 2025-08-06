@@ -3,23 +3,11 @@
 #include <stdbool.h>
 #include <linkedlist.h>
 #include <arraylist.h>
-
-#define HT_MAX_LOAD_FACTOR 0.8
+#include "hash.h"
 
 /*
     THIS CODE ONLY SUPPORTS SAME TYPE HASH ENTRIES
 */
-
-typedef struct _ht_entry {
-    LinkedList *elements;
-    bool valid_entry;
-} HashEntry;
-
-typedef struct _hash_table {
-    ArrayList *list;
-    uint16_t size_element;
-    size_t elements_count;
-} HashTable;
 
 HashTable *ht_init_table(size_t element_size) {
     HashTable *ht = malloc(sizeof(*ht));
@@ -40,6 +28,7 @@ HashTable *ht_init_table(size_t element_size) {
 }
 
 uint64_t ht_hash_function(void *val, size_t element_size) {
+    if(!val) return 0;
     uint64_t hash = 0;
     uint8_t *c = val;
     for(size_t i = 0; i < element_size; i++)
@@ -48,10 +37,12 @@ uint64_t ht_hash_function(void *val, size_t element_size) {
 }
 
 size_t ht_hash_val(HashTable *ht, void *val, size_t element_size) {
+    if(!ht || !val) return 0;
     return ht_hash_function(val, element_size) % ht->list->len;
 }
 
 float ht_load_factor(HashTable *ht) {
+    if(!ht) return -1;
     return (float)ht->elements_count/ht->list->len;
 }
 
@@ -73,6 +64,7 @@ bool ht_add_val(HashTable *ht, void *val, size_t element_size, size_t position) 
 }
 
 bool rehash(HashTable *ht) {
+    if(!ht) return false;
     ArrayList *new = al_alloc_array_list_sized(sizeof(HashEntry), ht->list->len * 2);
     new->count = new->len;
     for(size_t i = 0; i < new->len; i++) {
@@ -107,5 +99,33 @@ bool ht_insert(HashTable *ht, void *val, size_t element_size) {
     if(ht_has(ht, val, element_size, pos)) return false;
     if(ht_add_val(ht, val, element_size, pos)) ht->elements_count++;
     if(ht_load_factor(ht) > HT_MAX_LOAD_FACTOR) return rehash(ht);
+    return true;
+}
+
+void *ht_remove(HashTable *ht, void *val, size_t element_size) {
+    if(!ht || !val) return NULL;
+    if(ht->size_element != element_size) return NULL;
+    HashEntry *ith = al_get_ith(ht->list, ht_hash_val(ht, val, element_size));
+    void *e = ll_remove_val(ith->elements, val);
+    if(e) ht->elements_count--;
+    return e;
+}
+
+bool ht_is_empty(HashTable *ht) {
+    if(!ht) return false;
+    return ht->elements_count == 0;
+}
+
+size_t ht_size(HashTable *ht) {
+    if(!ht) return 0;
+    return ht->elements_count;
+}
+
+bool ht_free(HashTable *ht) {
+    if(!ht) return false;
+    for(size_t i = 0; i < ht->list->len; i++)
+        ll_free(((HashEntry*)al_get_ith(ht->list, i))->elements);
+    al_free_array_list(ht->list);
+    free(ht);
     return true;
 }

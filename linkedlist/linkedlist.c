@@ -3,7 +3,26 @@
 #include <stdbool.h>
 #include "linkedlist.h"
 
-//TODO: change byte manipulation to memfuncs
+#ifndef _STRING_H
+
+static void *memmove(void *dest, const void *src, size_t n) {
+    void *a = malloc(n);
+    for(size_t i = 0; i < n; i++)
+        *((uint8_t*)a + i) = *((uint8_t*)src + i);
+    for(size_t i = 0; i < n; i++)
+        *((uint8_t*)dest + i) = *((uint8_t*)a + i);
+    free(a);
+    return dest;
+}
+
+static uint32_t memcmp(const void *s1, const void *s2, size_t n) {
+    uint32_t diff = 0;
+    for(size_t i = 0; i < n; i++)
+        diff += *((uint8_t*)s2 + i) - *((uint8_t*)s1 + i);
+    return diff;
+}
+
+#endif
 
 LinkedList *ll_create_linkedlist() {
     LinkedList *list = calloc(1, sizeof(*list));
@@ -28,8 +47,9 @@ LLNode *ll_create_node(void *val, size_t element_size) {
         free(node);
         return NULL;
     }
-    for(size_t i = 0; i < element_size; i++)
-        *((uint8_t *)node->element + i) = *((uint8_t *)val + i);
+    memmove(node->element, val, element_size);
+    // for(size_t i = 0; i < element_size; i++)
+    //     *((uint8_t *)node->element + i) = *((uint8_t *)val + i);
     return node;
 }
 
@@ -80,6 +100,14 @@ bool ll_append_head(LinkedList *list, void *val, size_t size_element) {
 void *ll_remove_tail(LinkedList *list) {
     if(!list) return NULL;
     if(!list->head) return NULL;
+    if(list->head == list->tail) {
+        void *head = list->head->element;
+        free(list->head);
+        list->head = NULL;
+        list->tail = NULL;
+        list->len--;
+        return head;
+    }
     LLNode *tail = list->tail;
     tail->before->next = list->head;
     list->head->before = tail->before;
@@ -93,6 +121,14 @@ void *ll_remove_tail(LinkedList *list) {
 void *ll_remove_head(LinkedList *list) {
     if(!list) return NULL;
     if(!list->head) return NULL;
+    if(list->head == list->tail) {
+        void *head = list->head->element;
+        free(list->head);
+        list->head = NULL;
+        list->tail = NULL;
+        list->len--;
+        return head;
+    }
     LLNode *head = list->head;
     head->next->before = list->tail;
     list->tail->next = head->next;
@@ -111,9 +147,9 @@ void *ll_remove_val(LinkedList *list, void *val) {
     before->next = next;
     next->before = before;
     if(p == list->head && p == list->tail) {
+        void *val = p->element;
         list->head = NULL;
         list->tail = NULL;
-        void *val = p->element;
         free(p);
         return val;
     }
@@ -141,10 +177,9 @@ LLNode *ll_get_node(LinkedList *list, void *val) {
     if(!list->head) return NULL;
     LLNode *p = list->head;
     do {
-        bool found = true;
-        for(size_t i = 0; i < list->element_size; i++)
-            if(*((uint8_t*)p->element + i) != *((uint8_t*)val + i)) found = false;
-        if(found) return p;
+        if(memcmp(p->element, val, list->element_size) == 0) return p;
+        // for(size_t i = 0; i < list->element_size; i++)
+        //     if(*((uint8_t*)p->element + i) != *((uint8_t*)val + i)) found = false;
         p = p->next;
     } while(p != list->head);
     return NULL;
