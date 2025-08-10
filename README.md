@@ -8,8 +8,10 @@ C Data Structures for personal learn/usage.
 
 # TODO:
 
-- Algoritmo de HUFFMAN
-
 - Void impl tree & graph
 
-- Lista abstrata -> a cada inserção de um elemento, seu tamanho é pego, mas não como caracteristica geral da lista, mas uma caracteristica local de cada elemento.
+- BST AVL balancing
+
+- BST remove
+
+- Abstract list -> foreach element insertion, get its size and use it as a property for the entry
