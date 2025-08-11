@@ -27,7 +27,7 @@ Node *create_node(void *val, size_t element_size) {
 }
 
 Node *insert_in_tree(Node *root, void *val, size_t element_size) {
-    if(root == NULL) 
+    if(!root)
         return create_node(val, element_size);
     Node *inserted = NULL;
     if(memcmp(root->val, val, element_size) > 0)
@@ -36,6 +36,38 @@ Node *insert_in_tree(Node *root, void *val, size_t element_size) {
         inserted = insert_in_tree(root->right, val, element_size);
     if(is_unbalanced(root)) avl_balance(root);
     return inserted;
+}
+
+void remove_from_tree(Node *root, void *val, size_t element_size) {
+    if(!root) return;
+    if(memcmp(root->val, val, element_size) == 0) {
+        if(root->left || root->right) {
+
+        }
+        free(root->val);
+        free(root);
+        return;
+    }
+    if(memcmp(root->val, val, element_size) > 0) {
+        if(memcmp(root->left->val, val, element_size) == 0) {
+            //achou
+        }
+        remove_from_tree(root->left, val, element_size);
+        return;
+    }
+    if(memcmp(root->val, val element_size) < 0) {
+        if(memcmp(root->right->val, val, element_size) == 0) {
+            //achou
+        }
+        remove_from_tree(root->right, val, element_size);
+    }
+}
+
+void free_tree(Node *root) {
+    if(!root) return;
+    free_tree(root->left);
+    free_tree(root->right);
+    free(root);
 }
 
 Node *search(Node *root, void *val, size_t element_size){

@@ -14,4 +14,6 @@ C Data Structures for personal learn/usage.
 
 - BST remove
 
+- Graph refactor
+
 - Abstract list -> foreach element insertion, get its size and use it as a property for the entry
