@@ -173,7 +173,7 @@ void *ll_remove_at(LinkedList *list, size_t pos) {
 }
 
 LLNode *ll_get_node(LinkedList *list, void *val) {
-    if(!list | !val) return NULL;
+    if(!list || !val) return NULL;
     if(!list->head) return NULL;
     LLNode *p = list->head;
     do {

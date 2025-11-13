@@ -199,7 +199,7 @@ bool al_has_at(ArrayList *list, void *val, size_t element_size, size_t pos) {
 }
 
 void *al_get_ith(ArrayList *list, size_t i) {
-    if(!list | i > list->len) return NULL;
+    if(!list || i > list->len) return NULL;
     return list + (list->size_elements * i);
 }
 
