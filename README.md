@@ -4,9 +4,17 @@ C Data Structures for personal learn/usage.
 
 # Installation
 
+You can clone the repo for all of them or download each folder individually and compile:
+
+
+
 # Usage
 
+
+
 # TODO:
+
+- Hashmap
 
 - Void impl tree & graph
 
@@ -15,5 +23,3 @@ C Data Structures for personal learn/usage.
 - BST remove
 
 - Graph refactor
-
-- Abstract list -> foreach element insertion, get its size and use it as a property for the entry

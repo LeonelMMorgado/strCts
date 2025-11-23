@@ -12,9 +12,9 @@ typedef struct _arrlist {
     size_t size_elements;
 } ArrayList;
 
-ArrayList *al_create_array_list();
-ArrayList *al_alloc_array_list(size_t element_size);
-ArrayList *al_alloc_array_list_sized(size_t element_size, size_t len);
+ArrayList *al_alloc();
+ArrayList *al_create(size_t element_size);
+ArrayList *al_create_sized(size_t element_size, size_t len);
 bool       al_realloc_array_list(ArrayList *list);
 
 bool al_input_unsafe(ArrayList *list, void *new_element, size_t element_size, size_t position);
@@ -35,6 +35,6 @@ void *al_pop(ArrayList *list);
 void *al_dequeue(ArrayList *list);
 bool  al_remove_val(ArrayList *list, void *val, size_t element_size);
 
-bool al_free_array_list(ArrayList *list);
+bool al_destroy(ArrayList **list);
 
 #endif

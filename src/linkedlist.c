@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "linkedlist.h"
+#include <linkedlist.h>
 
 #ifndef _STRING_H
 
@@ -24,12 +24,12 @@ static uint32_t memcmp(const void *s1, const void *s2, size_t n) {
 
 #endif
 
-LinkedList *ll_create_linkedlist() {
+LinkedList *ll_alloc() {
     LinkedList *list = calloc(1, sizeof(*list));
     return list;
 }
 
-LinkedList *ll_alloc_linked_list(size_t size_element) {
+LinkedList *ll_create(size_t size_element) {
     LinkedList *list = ll_create_linkedlist();
     if(!list) return NULL;
     list->element_size = size_element;
@@ -195,13 +195,15 @@ LLNode *ll_get_node_at(LinkedList *list, size_t pos) {
     return p;
 }
 
-void ll_free(LinkedList *list) {
+void ll_destroy(LinkedList **list) {
     if(!list) return;
-    if(!list->head) {
-        free(list);
+    if(!*list) return;
+    if(!(*list)->head) {
+        free(*list);
+        *list = NULL;
         return;
     }
-    LLNode *head = list->head;
+    LLNode *head = (*list)->head;
     LLNode *p = head;
     do {
         free(p->element);
@@ -209,5 +211,6 @@ void ll_free(LinkedList *list) {
         free(p);
         p = next;
     } while(p != head);
-    free(list);
+    free(*list);
+    *list = NULL;
 }

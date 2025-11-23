@@ -3,16 +3,16 @@
 #include <stdbool.h>
 #include <linkedlist.h>
 #include <arraylist.h>
-#include "hash.h"
+#include <hash.h>
 
 /*
     THIS CODE ONLY SUPPORTS SAME TYPE HASH ENTRIES
 */
 
-HashTable *ht_init_table(size_t element_size) {
+HashTable *ht_create(size_t element_size) {
     HashTable *ht = malloc(sizeof(*ht));
     if(!ht) return NULL;
-    ht->list = al_alloc_array_list(sizeof(HashEntry));
+    ht->list = al_create(sizeof(HashEntry));
     if(!ht->list) {
         free(ht);
         return NULL;
@@ -59,13 +59,13 @@ bool ht_add_val(HashTable *ht, void *val, size_t element_size, size_t position) 
     if(!ith->valid_entry)
         ith->valid_entry = true;
     if(ith->elements == NULL)
-        ith->elements = ll_alloc_linked_list(element_size);
+        ith->elements = ll_create(element_size);
     return ll_append_tail(ith->elements, val, ht->size_element);
 }
 
 bool rehash(HashTable *ht) {
     if(!ht) return false;
-    ArrayList *new = al_alloc_array_list_sized(sizeof(HashEntry), ht->list->len * 2);
+    ArrayList *new = al_create_sized(sizeof(HashEntry), ht->list->len * 2);
     new->count = new->len;
     for(size_t i = 0; i < new->len; i++) {
         HashEntry*ith = al_get_ith(new->elements, i);
@@ -82,7 +82,7 @@ bool rehash(HashTable *ht) {
             HashEntry *new_entry = al_get_ith(new, ith);
             new_entry->valid_entry = true;
             if(!new_entry->elements)
-                new_entry->elements = ll_alloc_linked_list(ht->size_element);
+                new_entry->elements = ll_create(ht->size_element);
             ll_append_tail(new_entry->elements, p->element, ht->size_element);
         }
         ll_free(elements_at_i->elements);
@@ -121,11 +121,13 @@ size_t ht_size(HashTable *ht) {
     return ht->elements_count;
 }
 
-bool ht_free(HashTable *ht) {
+bool ht_destroy(HashTable **ht) {
     if(!ht) return false;
-    for(size_t i = 0; i < ht->list->len; i++)
-        ll_free(((HashEntry*)al_get_ith(ht->list, i))->elements);
-    al_free_array_list(ht->list);
-    free(ht);
+    if(!*ht) return false;
+    for(size_t i = 0; i < (*ht)->list->len; i++)
+        ll_destroy(&(((HashEntry*)al_get_ith((*ht)->list, i))->elements));
+    al_destroy(ht->list);
+    free(*ht);
+    *ht = NULL;
     return true;
 }

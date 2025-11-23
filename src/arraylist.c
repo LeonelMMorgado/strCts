@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "arraylist.h"
+#include <arraylist.h>
 
 //TODO: err_handling
 
@@ -26,12 +26,12 @@ static uint32_t memcmp(const void *s1, const void *s2, size_t n) {
 
 #endif
 
-ArrayList *al_create_array_list() {
+ArrayList *al_alloc() {
     ArrayList *list = calloc(1, sizeof(*list));
     return list;
 }
 
-ArrayList *al_alloc_array_list(size_t element_size) {
+ArrayList *al_create(size_t element_size) {
     ArrayList *list = al_create_array_list();
     if(!list) return NULL;
     list->elements = calloc(256, element_size);
@@ -244,12 +244,14 @@ bool al_remove_val(ArrayList *list, void *val, size_t element_size) {
     return false;
 }
 
-bool al_free_array_list(ArrayList *list) {
-    if(!list) return true; //it's effectively already freed
-    free(list->elements);
-    list->elements = NULL;
-    list->len = 0;
-    list->size_elements = 0;
-    free(list);
+bool al_destroy(ArrayList **list) {
+    if(!list) return false;
+    if(!*list) return false;
+    free((*list)->elements);
+    (*list)->elements = NULL;
+    (*list)->len = 0;
+    (*list)->size_elements = 0;
+    free(*list);
+    *list = NULL;
     return true;
 }

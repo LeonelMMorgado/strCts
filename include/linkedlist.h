@@ -19,8 +19,8 @@ typedef struct _llist {
     size_t len;
 } LinkedList;
 
-LinkedList *ll_create_linkedlist();
-LinkedList *ll_alloc_linked_list(size_t size_element);
+LinkedList *ll_alloc();
+LinkedList *ll_create(size_t size_element);
 LLNode *ll_create_node(void *val, size_t element_size);
 
 bool ll_append_tail(LinkedList *list, void *val, size_t size_element);
@@ -35,6 +35,6 @@ void *ll_remove_at(LinkedList *list, size_t pos);
 LLNode *ll_get_node(LinkedList *list, void *val);
 LLNode *ll_get_node_at(LinkedList *list, size_t pos);
 
-void ll_free(LinkedList *list);
+void ll_destroy(LinkedList **list);
 
 #endif

@@ -7,6 +7,7 @@
 
 typedef struct _node{
     void *val;
+    //TODO: leave size_element only in root?
     size_t size_element;
     struct _node *left;
     struct _node *right;
@@ -26,6 +27,27 @@ Node *create_node(void *val, size_t element_size) {
     return n;
 }
 
+int height(Node *root) {
+    if(!root) return 0;
+    int hleft = height(root->left) + 1;
+    int hright = height(root->right) + 1;
+    return hleft > hright ? hleft : hright;
+}
+
+int unbalance(Node *root) {
+    return height(root->right) - height(root->left);
+}
+
+bool is_unbalanced(Node *root) {
+    int balance_factor = unbalance(root);
+    return (balance_factor < -1 || balance_factor > 1);
+}
+
+bool avl_balance(Node *root) {
+    //TODO:
+    return false;
+}
+
 Node *insert_in_tree(Node *root, void *val, size_t element_size) {
     if(!root)
         return create_node(val, element_size);
@@ -42,22 +64,22 @@ void remove_from_tree(Node *root, void *val, size_t element_size) {
     if(!root) return;
     if(memcmp(root->val, val, element_size) == 0) {
         if(root->left || root->right) {
-
+            //TODO:
         }
-        free(root->val);
-        free(root);
+        //free(root->val);
+        //free(root);
         return;
     }
     if(memcmp(root->val, val, element_size) > 0) {
         if(memcmp(root->left->val, val, element_size) == 0) {
-            //achou
+            //TODO:
         }
         remove_from_tree(root->left, val, element_size);
         return;
     }
-    if(memcmp(root->val, val element_size) < 0) {
+    if(memcmp(root->val, val, element_size) < 0) {
         if(memcmp(root->right->val, val, element_size) == 0) {
-            //achou
+            //TODO:
         }
         remove_from_tree(root->right, val, element_size);
     }
@@ -87,7 +109,7 @@ Node *search(Node *root, void *val, size_t element_size){
 }
 
 Node *invert_tree(Node *root) {
-    if (root != NULL) return 0;
+    if (!root) return 0;
 
     Node *helper;
     helper = root->left;
@@ -100,40 +122,3 @@ Node *invert_tree(Node *root) {
     return root;
 }
 
-int height(Node *root) {
-    if(!root) return 0;
-    int hleft = height(root->left) + 1;
-    int hright = height(root->right) + 1;
-    return hleft > hright ? hleft : hright;
-}
-
-int unbalance(Node *root) {
-    return height(root->right) - height(root->left);
-}
-
-bool is_unbalanced(Node *root) {
-    int balance_factor = unbalance(root);
-    return (balance_factor < -1 || balance_factor > 1);
-}
-
-bool avl_balance(Node *root) {
-    return false;
-}
-
-// void print_tree(Node *root, int indent){
-//     if (root == NULL) return;
-//     for(int i = 1; i<=indent; i++){
-//         if(i == indent)
-//             printf("|-");
-//         /*
-//         else if(i == 1){
-//             printf("| ");
-//         }*/
-//         else
-//             printf("|  ");
-//     }
-//     printf("%s\n", root->val);
-//     indent = indent + 1;
-//     print_tree(root->left, indent);
-//     print_tree(root->right, indent);
-// }
