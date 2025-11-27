@@ -30,7 +30,7 @@ LinkedList *ll_alloc() {
 }
 
 LinkedList *ll_create(size_t size_element) {
-    LinkedList *list = ll_create_linkedlist();
+    LinkedList *list = ll_alloc();
     if(!list) return NULL;
     list->element_size = size_element;
     return list;
