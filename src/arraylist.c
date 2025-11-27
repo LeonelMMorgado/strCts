@@ -139,7 +139,7 @@ ArrayList *al_copy_list(ArrayList *list) {
 ArrayList *al_concat_list(ArrayList *l1, ArrayList *l2) {
     if(!l1 || !l2) return NULL;
     if(l1->size_elements != l2->size_elements) return NULL; //err check;
-    ArrayList *lret = al_create_array_list();
+    ArrayList *lret = al_alloc();
     if(!lret) return NULL;
     uint64_t n_size = l1->count + l2->count;
     uint64_t i = 1;

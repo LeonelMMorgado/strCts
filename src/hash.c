@@ -126,7 +126,7 @@ bool ht_destroy(HashTable **ht) {
     if(!*ht) return false;
     for(size_t i = 0; i < (*ht)->list->len; i++)
         ll_destroy(&(((HashEntry*)al_get_ith((*ht)->list, i))->elements));
-    al_destroy(&(ht->list));
+    al_destroy(&((*ht)->list));
     free(*ht);
     *ht = NULL;
     return true;
