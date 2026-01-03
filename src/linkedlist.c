@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 #include <linkedlist.h>
 
 #ifndef _STRING_H
@@ -47,7 +48,7 @@ LLNode *ll_create_node(void *val, size_t element_size) {
         free(node);
         return NULL;
     }
-    memmove(node->element, val, element_size);
+    memmove((uint8_t *)node->element, (uint8_t *)val, element_size);
     // for(size_t i = 0; i < element_size; i++)
     //     *((uint8_t *)node->element + i) = *((uint8_t *)val + i);
     return node;
@@ -177,7 +178,7 @@ LLNode *ll_get_node(LinkedList *list, void *val) {
     if(!list->head) return NULL;
     LLNode *p = list->head;
     do {
-        if(memcmp(p->element, val, list->element_size) == 0) return p;
+        if(memcmp((uint8_t *)p->element, (uint8_t *)val, list->element_size) == 0) return p;
         // for(size_t i = 0; i < list->element_size; i++)
         //     if(*((uint8_t*)p->element + i) != *((uint8_t*)val + i)) found = false;
         p = p->next;

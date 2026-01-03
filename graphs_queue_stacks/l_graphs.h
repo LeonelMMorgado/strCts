@@ -4,7 +4,7 @@
 #define directed true //add ifdef for directed??
 
 typedef struct graph_matrix {
-    int adj[V][V];
+    int adj[V][V]; //only this one should exist in a struct (should it be a list of lists?
     int flag[V];
     int via[V];
     int dist[V];
