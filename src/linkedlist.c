@@ -4,27 +4,6 @@
 #include <string.h>
 #include <linkedlist.h>
 
-#ifndef _STRING_H
-
-static void *memmove(void *dest, const void *src, size_t n) {
-    void *a = malloc(n);
-    for(size_t i = 0; i < n; i++)
-        *((uint8_t*)a + i) = *((uint8_t*)src + i);
-    for(size_t i = 0; i < n; i++)
-        *((uint8_t*)dest + i) = *((uint8_t*)a + i);
-    free(a);
-    return dest;
-}
-
-static uint32_t memcmp(const void *s1, const void *s2, size_t n) {
-    uint32_t diff = 0;
-    for(size_t i = 0; i < n; i++)
-        diff += *((uint8_t*)s2 + i) - *((uint8_t*)s1 + i);
-    return diff;
-}
-
-#endif
-
 LinkedList *ll_alloc() {
     LinkedList *list = calloc(1, sizeof(*list));
     return list;
@@ -49,12 +28,10 @@ LLNode *ll_create_node(void *val, size_t element_size) {
         return NULL;
     }
     memmove((uint8_t *)node->element, (uint8_t *)val, element_size);
-    // for(size_t i = 0; i < element_size; i++)
-    //     *((uint8_t *)node->element + i) = *((uint8_t *)val + i);
     return node;
 }
 
-bool ll_append_tail(LinkedList *list, void *val, size_t size_element) {
+bool ll_add_tail(LinkedList *list, void *val, size_t size_element) {
     if(!list || !val) return false;
     if(list->element_size != size_element) return false;
     if(!list->head) {
@@ -77,7 +54,7 @@ bool ll_append_tail(LinkedList *list, void *val, size_t size_element) {
     return true;
 }
 
-bool ll_append_head(LinkedList *list, void *val, size_t size_element) {
+bool ll_add_head(LinkedList *list, void *val, size_t size_element) {
     if(!list || !val) return false;
     if(list->element_size != size_element) return false;
     if(!list->head) {
@@ -96,6 +73,85 @@ bool ll_append_head(LinkedList *list, void *val, size_t size_element) {
     list->tail->next = list->head;
     list->len += 1;
     return true;
+}
+
+bool ll_add_at(LinkedList *list, void *val, size_t size_element, size_t pos) {
+	if(!list || !val) return false;
+	if(list->element_size != size_element) return false;
+	if(pos == 0) return ll_append_head(list, val, size_element);
+	if(pos == list->len - 1) return ll_append_tail(list, val, size_element);
+	size_t i = 0;
+	LLNode *p = list->head;
+	while(p) {
+		if(i == pos) break;
+		p = p->next;
+		i++;
+	}
+	p->before->next = ll_create_node(val, list->element_size);
+	if(!(p->before->next) return false;
+	p->before = p->before->next;
+	list->len += 1;
+	return true;
+}
+
+bool ll_add_many_at(LinkedList *list, void *elements, size_t elements_count, size_t element_size, size_t pos) {
+	if(!list || !elements) return false;
+	if(list->element_size != element_size) return false;
+	LLNode *first = ll_create_node(elements, element_size);
+	LLNode *last = first;
+	for(size_t i = 1; i < elements_count; i++) {
+		last->next = ll_create_node((uint8_t*)elements + (i * elements_size), elements_size);
+		last->next->before = last;
+		last = last->next;
+	}
+	LLNode *node_at_pos = ll_get_node_at(list, pos);
+	node_at_pos->before->next = first;
+	first->before = node_at_pos->before;
+	node_at_pos->before = last;
+	last->next = node_at_pos;
+
+	if(pos == 0) list->head = first;
+	if(pos >= list->len) list->tail = last;
+	list->len += elements_count;
+	return true;
+}
+
+bool ll_add_many(LinkedList *list, void *elements, size_t elements_count, size_t elements_size) {
+	if(!list || !elements) return false;
+	if(list->element_size != elements_size) return false;
+	return ll_append_many_at(list, elements, elements_count, element_size, list->len);
+}
+
+LinkedList *ll_copy_list(LinkedList *list) {
+	if(!list) return NULL;
+	LinkedList *new_l = ll_create(list->element_size);
+	if(!new_l) return NULL;
+	LLNode *p = list->head;
+	for(size_t i = 0; i < list->len; i++) {
+		//FIXME: could run better by doing the logic in here and only updating whats necessary
+		ll_append_tail(new_l, p->element, list->element_size);
+		p = p->next;
+	}
+	return new_l;
+}
+
+LinkedList *ll_concat_list(LinkedList *list1, LinkedList *list2) {
+	if(!list1 || !list2) return NULL;
+	LinkedList *new_l = ll_create(list1->element_size);
+	if(!new_l) return NULL;
+	LLNode *p = list1->head;
+	for(size_t i = 0; i < list1->len; i++) {
+		//FIXME: could run better by doing the logic in here and only updating whats necessary
+		ll_append_tail(new_l, p->element, list->element_size);
+		p = p->next;
+	}
+	p = list2->head;
+	for(size_t i = 0; i < list2->len; i++) {
+		//FIXME: could run better by doing the logic in here and only updating whats necessary
+		ll_append_tail(new_l, p->element, list->element_size);
+		p = p->next;
+	}
+	return new_l;
 }
 
 void *ll_remove_tail(LinkedList *list) {
@@ -179,8 +235,6 @@ LLNode *ll_get_node(LinkedList *list, void *val) {
     LLNode *p = list->head;
     do {
         if(memcmp((uint8_t *)p->element, (uint8_t *)val, list->element_size) == 0) return p;
-        // for(size_t i = 0; i < list->element_size; i++)
-        //     if(*((uint8_t*)p->element + i) != *((uint8_t*)val + i)) found = false;
         p = p->next;
     } while(p != list->head);
     return NULL;

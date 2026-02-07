@@ -12,29 +12,32 @@ typedef struct _arrlist {
     size_t size_elements;
 } ArrayList;
 
-//ArrayList *al_alloc();
 ArrayList *al_create(size_t element_size);
 ArrayList *al_create_sized(size_t element_size, size_t len);
 bool       al_realloc(ArrayList *list);
 
 bool al_input_unsafe(ArrayList *list, void *new_element, size_t element_size, size_t position);
-bool al_append(ArrayList *list, void *new_element, size_t element_size);
-bool al_push(ArrayList *list, void *new_element, size_t element_size);
-bool al_append_many(ArrayList *list, void *elements, size_t elements_count, size_t elements_size);
+bool al_add(ArrayList *list, void *new_element, size_t element_size);
+bool al_add_at(ArrayList *list, void *new_element, size_t element_size, size_t pos);
+bool al_add_many(ArrayList *list, void *elements, size_t elements_count, size_t elements_size);
+bool al_add_many_at(ArrayList *list, void *elements, size_t elements_count, size_t elements_size, size_t pos);
 
 ArrayList *al_copy_list(ArrayList *list);
 ArrayList *al_concat_list(ArrayList *l1, ArrayList *l2);
 
 bool al_is_empty(ArrayList *list);
-bool al_has(ArrayList *list, void *val, size_t element_size, size_t *pos);
-bool al_has_at(ArrayList *list, void *val, size_t element_size, size_t pos);
+bool al_has(ArrayList *list, void *val, size_t *pos);
+bool al_has_at(ArrayList *list, void *val, size_t pos);
 
 void *al_get_ith(ArrayList *list, size_t i);
-void *al_remove_at(ArrayList *list, size_t pos);
-void *al_pop(ArrayList *list);
-void *al_remove_end(ArrayList *list);
-bool  al_remove_val(ArrayList *list, void *val, size_t element_size);
 
+bool al_remove_at(ArrayList *list, size_t pos, void *out_ptr);
+bool al_remove_at_fast(ArrayList *list, size_t pos, void *out_ptr);
+bool al_pop(ArrayList *list, void *out_ptr);
+bool al_remove_first(ArrayList *list, void *out_ptr);
+bool al_remove_val(ArrayList *list, void *val);
+
+bool al_clear(ArrayList *list);
 bool al_destroy(ArrayList **list);
 
 #endif

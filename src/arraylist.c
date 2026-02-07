@@ -2,30 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include "arraylist.h"
-
-//TODO: err_handling
-
-#ifndef _STRING_H
-
-static void *memmove(void *dest, const void *src, size_t n) {
-    void *a = malloc(n);
-    for(size_t i = 0; i < n; i++)
-        *((uint8_t*)a + i) = *((uint8_t*)src + i);
-    for(size_t i = 0; i < n; i++)
-        *((uint8_t*)dest + i) = *((uint8_t*)a + i);
-    free(a);
-    return dest;
-}
-
-static uint32_t memcmp(const void *s1, const void *s2, size_t n) {
-    uint32_t diff = 0;
-    for(size_t i = 0; i < n; i++)
-        diff += *((uint8_t*)s2 + i) - *((uint8_t*)s1 + i);
-    return diff;
-}
-
-#endif
+#include <arraylist.h>
 
 ArrayList *al_alloc() {
     ArrayList *list = calloc(1, sizeof(*list));
@@ -60,6 +37,7 @@ ArrayList *al_create_sized(size_t element_size, size_t len) {
 
 bool al_realloc(ArrayList *list) {
     if(!list) return false;
+	if(list->size_elements * list->len * 2 < list->size_elements * list->len) return false;
     void *check = realloc(list->elements, list->size_elements * list->len * 2);
     if(!check) return false;
     list->elements = check;
@@ -74,47 +52,36 @@ bool al_input_unsafe(ArrayList *list, void *new_element, size_t element_size, si
     
     uint8_t *dest = (uint8_t *)list->elements + (list->size_elements * position);
     memmove(dest, (uint8_t *)new_element, list->size_elements);
-    //for(size_t i = 0; i < list->size_elements; i++)
-        // *((uint8_t *)list->elements + i + (list->size_elements * position)) = *(i + (uint8_t *)new_element);
     return true;
 }
 
-bool al_append(ArrayList *list, void *new_element, size_t element_size) {
+bool al_add(ArrayList *list, void *new_element, size_t element_size) {
     if(!list || !new_element) return false;
     if(element_size != list->size_elements) return false;
     if(list->count == list->len)
         if(!al_realloc(list)) return false;
-    //if you want to use pointers like int *a, you'd still need to pass as a ref &a
     
     uint8_t *dest = (uint8_t *)list->elements + (list->size_elements * list->count);
     memmove(dest, new_element, list->size_elements);
-    //for(size_t i = 0; i < list->size_elements; i++)
-        // *((uint8_t *)list->elements + i + (list->size_elements * list->count)) = *(i + (uint8_t *)new_element);
     list->count += 1;
     return true;
 }
 
-bool al_push(ArrayList *list, void *new_element, size_t element_size) {
+bool al_add_at(ArrayList *list, void *new_element, size_t element_size, size_t pos) {
     if(!list || !new_element) return false;
     if(element_size != list->size_elements) return false;
-    if(list->count == list->len)
+	if(list->count == list->len)
         if(!al_realloc(list)) return false;
-    memmove((uint8_t *)list->elements + list->size_elements, list->elements, list->count * list->size_elements);
-    //for(size_t i = list->count - 1; i > 0; i++) {
-    //    uint8_t *src = list->elements + (i * list->size_elements);
-    //    uint8_t *dest = list->elements + ((i + 1) * list->size_elements);
-    //    memmove(dest, src, list->size_elements);
-    //}
-    // for(size_t j = 0; j < list->size_elements; j++)
-    //     *((uint8_t*)list->elements + i + j + 1) = *((uint8_t*)list->elements + i + j);
-    memmove(list->elements, new_element, list->size_elements);
-    // for(size_t i = 0; i < list->size_elements; i++)
-    //     *((uint8_t *)list->elements + i) = *(i + (uint8_t *)new_element);
+    if(list->count <= pos) return al_add(list, new_element, element_size);
+	memmove((uint8_t*)list->elements + (list->size_elements * (pos + 1)),
+			(uint8_t*)list->elements + (list->size_elements * pos),
+			list->size_elements * (list->count - pos));
+    memmove((uint8_t*)list->elements + (list->size_elements * pos), new_element, list->size_elements);
     list->count += 1;
     return true;
 }
 
-bool al_append_many(ArrayList *list, void *elements, size_t elements_count, size_t elements_size) {
+bool al_add_many(ArrayList *list, void *elements, size_t elements_count, size_t elements_size) {
     if(!list || !elements) return false;
     if(elements_size != list->size_elements) return false;
     if(list->count + elements_count >= list->len) {
@@ -125,22 +92,43 @@ bool al_append_many(ArrayList *list, void *elements, size_t elements_count, size
             list->len *= 2;
         }
     }
-    for(size_t i = 0; i < elements_count; i++)
-        al_append(list, (void *)((uint8_t *)elements + (i * elements_size)), elements_size);
+	memmove((uint8_t*)list->elements + (list->count * list->size_elements), elements, elements_size);
+	list->count += elements_count;
     return true;
+}
+
+bool al_add_many_at(ArrayList *list, void *elements, size_t elements_count, size_t elements_size, size_t pos) {
+	if(!list || !elements) return false;
+	if(elements_size != list->size_elements) return false;
+	if(list->count <= pos) return al_add_many(list, elements, elements_count, elements_size);
+	if(!list->count + elements_count >= list->len) {
+        while(list->len < list->count + elements_count) {
+            void *check = realloc(list->elements, list->size_elements * list->len * 2);
+            if(!check) return false;
+            list->elements = check;
+            list->len *= 2;
+        }
+	}
+	memmove((uint8_t*)list->elements + ((pos + elements_count) * elements_size),
+			(uint8_t*)list->elements + (pos * element_size),
+			element_size * elements_count);
+	memmove((uint8_t*)list->elements + (pos * element_size),
+			elements,
+			element_size * elements_count);
+	list->count += elements_count;
+	return true;
 }
 
 ArrayList *al_copy_list(ArrayList *list) {
     if(!list) return NULL;
     ArrayList *cpy = al_create(list->size_elements);
-    for(int i = 0; i < list->count; i++)
-        al_append(cpy, (void*)(list->elements + (i * list->size_elements)), list->size_elements);
+	memmove(cpy, list->elements, list->count);
     return cpy;
 }
 
 ArrayList *al_concat_list(ArrayList *l1, ArrayList *l2) {
     if(!l1 || !l2) return NULL;
-    if(l1->size_elements != l2->size_elements) return NULL; //err check;
+    if(l1->size_elements != l2->size_elements) return NULL;
     ArrayList *lret = al_alloc();
     if(!lret) return NULL;
     uint64_t n_size = l1->count + l2->count;
@@ -154,10 +142,7 @@ ArrayList *al_concat_list(ArrayList *l1, ArrayList *l2) {
     }
     memmove(a, l1->elements, l1->count * l1->size_elements);
     memmove(a + (l1->count * l1->size_elements), (uint8_t *)l2->elements, l2->count * l2->size_elements);
-    // for(uint64_t j = 0; j < l1->size_elements * l1->count; j++)
-    //     a[j] = *(j + (uint8_t*)l1->elements);
-    // for(uint64_t j = 0; j < l2->size_elements * l2->count; j++)
-    //     a[l1->count * l1->size_elements + j] = *(j + (uint8_t*)l2->elements);
+
     lret->elements = (void *)a;
     lret->size_elements = l1->size_elements;
     lret->count = n_size;
@@ -166,19 +151,16 @@ ArrayList *al_concat_list(ArrayList *l1, ArrayList *l2) {
 }
 
 bool al_is_empty(ArrayList *list) {
-    return list->count == 0;
+    return !list || list->count == 0;
 }
 
-bool al_has(ArrayList *list, void *val, size_t element_size, size_t *pos) {
+bool al_has(ArrayList *list, void *val, size_t *pos) {
     if(!list || !val) return false;
-    if(list->size_elements != element_size) return false;
     for(size_t i = 0; i < list->count; i++) {
         bool found = true;
         uint8_t *s1 = (uint8_t *)list->elements + (i * list->size_elements);
         if(memcmp(s1, val, list->size_elements) != 0) 
             found = false;
-        // for(size_t j = 0; j < list->size_elements; j++)
-        //     *((uint8_t*)list->elements + j + (i*list->size_elements)) != *((uint8_t*)val + j)
         if(found) {
             *pos = i;
             return true;
@@ -187,61 +169,68 @@ bool al_has(ArrayList *list, void *val, size_t element_size, size_t *pos) {
     return false;
 }
 
-bool al_has_at(ArrayList *list, void *val, size_t element_size, size_t pos) {
+bool al_has_at(ArrayList *list, void *val, size_t pos) {
     if(!list || !val) return false;
-    if(list->size_elements != element_size) return false;
-    if(list->count < pos || pos < 0) return false;
+    if(list->count <= pos) return false;
     bool found = true;
     uint8_t *s1 = (uint8_t *)list->elements + (pos * list->size_elements);
     if(memcmp(s1, val, list->size_elements) != 0) found = false;
-    // for(size_t i = 0; i < list->size_elements; i++)
-    //     if(*((uint8_t*)list->elements + i + (pos * list->size_elements)) != *((uint8_t*)val + i)) 
-    //         found = false;
     return found;
 }
 
 void *al_get_ith(ArrayList *list, size_t i) {
     if(!list || i > list->count) return NULL;
-    if(list->count < i || i < 0) return NULL;
+    if(list->count < i) return NULL;
     return (uint8_t *)list->elements + (list->size_elements * i);
 }
 
-void *al_remove_at(ArrayList *list, size_t pos) {
-    if(!list) return NULL;
-    if(list->count == 0 || list->count <= pos) return NULL;
-    void *element = malloc(list->size_elements);
-    if(!element) return NULL;
-    void *src = list->elements + (list->size_elements * pos);
-    memmove(element, src, list->size_elements);
-    memmove((uint8_t *)list->elements + (list->size_elements * (pos+1)),
-            (uint8_t *)list->elements + (list->size_elements * pos),
-            list->size_elements * (list->count - pos));
-    //for(int i = pos + 1; i < list->count; i++)
-    //     for(int j = 0; j < list->size_elements; j++)
-    //         *((i-1) * list->size_elements + j + (uint8_t*)list->elements) = *(i * list->size_elements + j + (uint8_t*)list->elements);
+bool al_remove_at(ArrayList *list, size_t pos, void *out_ptr) {
+    if(!list) return false;
+    if(list->count == 0 || list->count <= pos) return false;
+    void *src = (uint8_t*)list->elements + (list->size_elements * pos);
+    if(out_ptr) memmove(out_ptr, src, list->size_elements);
+    memmove(src,
+            (uint8_t *)list->elements + (list->size_elements * (pos+1)),
+            list->size_elements * (list->count - pos - 1));
     list->count -= 1;
-    return element;
+    return true;
 }
 
-void *al_pop(ArrayList *list) {
-    return al_remove_at(list, 0);
+bool al_remove_at_fast(ArrayList *list, size_t pos, void *out_ptr) {
+	if(!list) return false;
+	if(list->count == 0 || list->count <= pos) return false;
+	void *src = (uint8_t*)list->elements + (list->size_elements * pos);
+	if(out_ptr) memmove(out_ptr, src, list->size_elements);
+	memmove(src,
+			(uint8_t*)list->elements + (list->size_elements * (list->count - 1)),
+			list->size_elements);
+	list->count -= 1;
+	return true;
 }
 
-void *al_remove_end(ArrayList *list) {
-    return al_remove_at(list, list->count - 1);
+bool al_pop(ArrayList *list, void *out_ptr) {
+    return al_remove_at(list, list->count - 1, out_ptr);
 }
 
-bool al_remove_val(ArrayList *list, void *val, size_t element_size) {
+bool al_remove_first(ArrayList *list, void *out_ptr) {
+    return al_remove_at(list, 0, out_ptr);
+}
+
+bool al_remove_val(ArrayList *list, void *val) {
     if(!list) return false;
     if(!val) return false;
-    if(list->size_elements != element_size) return false;
     size_t pos = 0;
     if(al_has(list, val, element_size, &pos)) {
-        void *v = al_remove_at(list, pos);
-        free(v);
-        return true;
+        return al_remove_at(list, pos, 0);;
     }
     return false;
+}
+
+bool al_clear(ArrayList *list) {
+	if(!list) return false;
+	memset(list->elements, 0, list->size_elements * list->count);
+	list->count = 0;
+	return true;
 }
 
 bool al_destroy(ArrayList **list) {

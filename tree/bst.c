@@ -7,7 +7,6 @@
 
 typedef struct _node{
     void *val;
-    //TODO: leave size_element only in root?
     size_t size_element;
     struct _node *left;
     struct _node *right;
