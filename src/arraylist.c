@@ -190,7 +190,7 @@ bool al_remove_at(ArrayList *list, size_t pos, void *out_ptr) {
     void *src = (uint8_t*)list->elements + (list->size_elements * pos);
     if(out_ptr) memmove(out_ptr, src, list->size_elements);
     memmove(src,
-            (uint8_t *)list->elements + (list->size_elements * (pos+1)),
+            (uint8_t *)src + list->size_elements,
             list->size_elements * (list->count - pos - 1));
     list->count -= 1;
     return true;

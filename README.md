@@ -8,14 +8,10 @@ You can use the library in the stb fashion or use it with its headers and source
 
 # TODO:
 
-- Hashmap
-
-- Void impl tree & graph
-
 - BST AVL balancing
 
 - BST remove
 
-- Graph refactor
-
 - Refactor void structs to account for alignment
+
+- Remove size\_element of functions

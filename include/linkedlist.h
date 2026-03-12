@@ -21,11 +21,11 @@ typedef struct _llist {
 
 LinkedList *ll_create(size_t size_element);
 
-bool ll_add_tail(LinkedList *list, void *val, size_t size_element);
-bool ll_add_head(LinkedList *list, void *val, size_t size_element);
-bool ll_add_at(LinkedList *list, void *val, size_t size_element, size_t pos);
-bool ll_add_many(LinkedList *list, void *elements, size_t elements_count, size_t elements_size);
-bool ll_add_many_at(LinkedList *list, void *elements, size_t elements_count, size_t elements_size, size_t pos);
+bool ll_add_tail(LinkedList *list, void *val);
+bool ll_add_head(LinkedList *list, void *val);
+bool ll_add_at(LinkedList *list, void *val, size_t pos);
+bool ll_add_many(LinkedList *list, void *elements, size_t elements_count);
+bool ll_add_many_at(LinkedList *list, void *elements, size_t elements_count, size_t pos);
 
 LinkedList *ll_copy_list(LinkedList *list);
 LinkedList *ll_concat_list(LinkedList *list1, LinkedList *list2);
@@ -33,10 +33,10 @@ LinkedList *ll_concat_list(LinkedList *list1, LinkedList *list2);
 LLNode *ll_get_node(LinkedList *list, void *val);
 LLNode *ll_get_node_at(LinkedList *list, size_t pos);
 
-bool ll_remove_tail(LinkedList *list);
-bool ll_remove_head(LinkedList *list);
+bool ll_remove_tail(LinkedList *list, void *out_ptr);
+bool ll_remove_head(LinkedList *list, void *out_ptr);
 bool ll_remove_val(LinkedList *list, void *val);
-bool ll_remove_at(LinkedList *list, size_t pos);
+bool ll_remove_at(LinkedList *list, size_t pos, void *out_ptr);
 
 void ll_destroy(LinkedList **list);
 

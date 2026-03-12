@@ -2,15 +2,15 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef struct Node {
+typedef struct _abstract_tree {
     void *val;
     size_t size;
-    struct Node* child;
-    struct Node* sibling;
-} Node;
+    struct _abstract_tree *child;
+    struct _abstract_tree *sibling;
+} AbstractTree;
 
-Node* create_node(void *val, size_t size) {
-    Node* node = malloc(sizeof(*node));
+AbstractTree *create_node(void *val, size_t size) {
+    AbstractTree *node = malloc(sizeof(*node));
     if(!node) return NULL;
     node->val = val;
     node->size = size;
@@ -19,18 +19,18 @@ Node* create_node(void *val, size_t size) {
     return node;
 }
 
-void add_child(Node* parent, Node* child) {
+void add_child(AbstractTree *parent, AbstractTree *child) {
     if(parent->child == NULL) {
         parent->child = child;
     } else {
-        Node* sibling = parent->child;
+        AbstractTree *sibling = parent->child;
         while(sibling->sibling != NULL) 
             sibling = sibling->sibling;
         sibling->sibling = child;
     }
 }
 
-void _print_tree_rec(Node* root, int level) {
+void _print_tree_rec(AbstractTree *root, int level) {
     for(int i = 0; i < level; i++) {
         if(i==level-1)
             printf("─");
@@ -38,13 +38,13 @@ void _print_tree_rec(Node* root, int level) {
             printf("└");
     }
     printf("%p\n", root->val); //add way to print accordingly
-    Node* child = root->child;
+    AbstractTree *child = root->child;
     while(child != NULL) {
         _print_tree_rec(child, level + 1);
         child = child->sibling;
     }
 }
 
-void print_tree(Node *root) {
+void print_tree(AbstractTree *root) {
     _print_tree_rec(root, 0);
 }

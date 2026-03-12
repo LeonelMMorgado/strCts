@@ -154,83 +154,102 @@ LinkedList *ll_concat_list(LinkedList *list1, LinkedList *list2) {
 	return new_l;
 }
 
-void *ll_remove_tail(LinkedList *list) {
+bool ll_remove_tail(LinkedList *list, void *out_ptr) {
     if(!list) return NULL;
     if(!list->head) return NULL;
     if(list->head == list->tail) {
         void *head = list->head->element;
+		if(out_ptr) out_ptr = head->element;
         free(list->head);
         list->head = NULL;
         list->tail = NULL;
         list->len--;
-        return head;
+        return true;
     }
     LLNode *tail = list->tail;
     tail->before->next = list->head;
     list->head->before = tail->before;
     list->tail = tail->before;
-    void *val = tail->element;
+	if(out_ptr) out_ptr = tail->element;
     free(tail);
     list->len--;
-    return val;
+    return true;
 }
 
-void *ll_remove_head(LinkedList *list) {
-    if(!list) return NULL;
-    if(!list->head) return NULL;
+bool ll_remove_head(LinkedList *list, void *out_ptr) {
+    if(!list) return false;
+    if(!list->head) return false;
     if(list->head == list->tail) {
         void *head = list->head->element;
+		if(out_ptr) out_ptr = head->element;
         free(list->head);
         list->head = NULL;
         list->tail = NULL;
         list->len--;
-        return head;
+        return true;
     }
     LLNode *head = list->head;
     head->next->before = list->tail;
     list->tail->next = head->next;
     list->head = head->next;
-    void *val = head->element;
+	if(out_ptr) out_ptr = head->element;
     free(head);
     list->len--;
-    return val;
+    return true;
 }
 
-void *ll_remove_val(LinkedList *list, void *val) {
+bool ll_remove_val(LinkedList *list, void *val) {
+	if(!list || !val) return false;
     LLNode *p = ll_get_node(list, val);
-    if(!p) return NULL;
-    LLNode *before = p->before;
-    LLNode *next = p->next;
-    before->next = next;
-    next->before = before;
+    if(!p) return false;
     if(p == list->head && p == list->tail) {
         void *val = p->element;
         list->head = NULL;
         list->tail = NULL;
         free(p);
-        return val;
+        return true;
     }
+    LLNode *before = p->before;
+    LLNode *next = p->next;
+    before->next = next;
+    next->before = before;
     if(p == list->head)
         list->head = next;
     if(p == list->tail)
         list->tail = before;
-    void *retval = p->element;
     free(p);
     list->len--;
-    return retval;
+    return true;
 }
 
-void *ll_remove_at(LinkedList *list, size_t pos) {
+bool ll_remove_at(LinkedList *list, size_t pos, void *out_ptr) {
     if(!list) return NULL;
     if(!list->head) return NULL;
     LLNode *p = list->head;
     for(size_t i = 0; i < pos; i++)
         p = p->next;
-    return ll_remove_val(list, p->element);
+    if(p == list->head && p == list->tail) {
+        void *val = p->element;
+        list->head = NULL;
+        list->tail = NULL;
+        free(p);
+        return true;
+    }
+    LLNode *before = p->before;
+    LLNode *next = p->next;
+    before->next = next;
+    next->before = before;
+    if(p == list->head)
+        list->head = next;
+    if(p == list->tail)
+        list->tail = before;
+    free(p);
+    list->len--;
+    return true;
 }
 
 LLNode *ll_get_node(LinkedList *list, void *val) {
-    if(!list | !val) return NULL;
+    if(!list || !val) return NULL;
     if(!list->head) return NULL;
     LLNode *p = list->head;
     do {
