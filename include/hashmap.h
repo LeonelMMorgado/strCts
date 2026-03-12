@@ -8,7 +8,11 @@ typedef struct _hash_map_pair {
 	void *value;
 } HashMapPair;
 
-typedef HashSet HashMap;
+typedef struct _hash_map {
+	HashSet *hs;
+	size_t key_size;
+	size_t value_size;
+} HashMap;
 
 HashMap *hm_create(size_t size_key, size_t size_value);
 
