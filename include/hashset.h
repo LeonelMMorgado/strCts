@@ -7,7 +7,7 @@
 #include "linkedlist.h"
 
 typedef struct _hs_entry {
-    LinkedList *elements;
+    void *element;
     bool valid_entry;
 } HashEntry;
 
@@ -23,10 +23,11 @@ uint64_t hs_hash_function(void *val, size_t element_size);
 size_t hs_hash_val(HashSet *hs, void *val, size_t element_size);
 float hs_load_factor(HashSet *hs);
 
-bool hs_has(HashSet *hs, void *val, size_t element_size, size_t position);
-bool hs_add(HashSet *hs, void *val, size_t element_size);
+bool hs_add(HashSet *hs, void *val);
 
-void *hs_remove(HashSet *hs, void *val, size_t element_size);
+bool hs_has(HashSet *hs, void *val, size_t position);
+
+bool hs_remove(HashSet *hs, void *val, void *out_ptr);
 
 bool hs_is_empty(HashSet *hs);
 size_t hs_size(HashSet *hs);

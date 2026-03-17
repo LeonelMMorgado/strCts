@@ -42,15 +42,13 @@ float hs_load_factor(HashSet *hs) {
     return (float)hs->elements_count/hs->list->len;
 }
 
-bool hs_has(HashSet *hs, void *val, size_t element_size, size_t position) {
+bool hs_has(HashSet *hs, void *val, size_t position) {
     if(!hs || !val) return false;
-    if(hs->size_element != element_size) return false;
     return ll_get_node(((HashEntry*)al_get_ith(hs->list, position))->elements, val) != NULL;
 }
 
-bool hs_add_val(HashSet *hs, void *val, size_t element_size, size_t position) {
+bool hs_add_val(HashSet *hs, void *val, size_t position) {
     if(!hs || !val) return false;
-    if(hs->size_element != element_size) return false;
     HashEntry*ith = (HashEntry*)al_get_ith(hs->list, position);
     if(!ith->valid_entry)
         ith->valid_entry = true;
@@ -88,9 +86,8 @@ bool rehash(HashSet *hs) {
     return true;
 }
 
-bool hs_add(HashSet *hs, void *val, size_t element_size) {
+bool hs_add(HashSet *hs, void *val) {
     if(!hs || !val) return false;
-    if(hs->size_element != element_size) return false;
     size_t pos = hs_hash_val(hs, val, element_size);
     if(hs_has(hs, val, element_size, pos)) return false;
     if(hs_add_val(hs, val, element_size, pos)) hs->elements_count++;
@@ -98,9 +95,8 @@ bool hs_add(HashSet *hs, void *val, size_t element_size) {
     return true;
 }
 
-void *hs_remove(HashSet *hs, void *val, size_t element_size) {
+void *hs_remove(HashSet *hs, void *val) {
     if(!hs || !val) return NULL;
-    if(hs->size_element != element_size) return NULL;
     HashEntry *ith = al_get_ith(hs->list, hs_hash_val(hs, val, element_size));
     void *e = ll_remove_val(ith->elements, val);
     if(e) hs->elements_count--;
