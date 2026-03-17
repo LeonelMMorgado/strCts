@@ -10,12 +10,6 @@ You can use the library in the stb fashion or use it with its headers and source
 
 - Hashmap
 
-- Void impl tree & graph
-
-- BST AVL balancing
-
-- BST remove
-
-- Graph refactor
+- Better BSTree interface
 
 - Refactor void structs to account for alignment

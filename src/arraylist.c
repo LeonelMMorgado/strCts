@@ -45,9 +45,9 @@ bool al_realloc(ArrayList *list) {
     return true;
 }
 
-bool al_input_unsafe(ArrayList *list, void *new_element, size_t element_size, size_t position) {
+//This function does not increment list count
+bool al_input_unsafe(ArrayList *list, void *new_element, size_t position) {
     if(!list || !new_element) return false;
-    if(element_size != list->size_elements) return false;
     if(position >= list->len) return false;
     
     uint8_t *dest = (uint8_t *)list->elements + (list->size_elements * position);
@@ -55,9 +55,8 @@ bool al_input_unsafe(ArrayList *list, void *new_element, size_t element_size, si
     return true;
 }
 
-bool al_add(ArrayList *list, void *new_element, size_t element_size) {
+bool al_add(ArrayList *list, void *new_element) {
     if(!list || !new_element) return false;
-    if(element_size != list->size_elements) return false;
     if(list->count == list->len)
         if(!al_realloc(list)) return false;
     
@@ -67,12 +66,15 @@ bool al_add(ArrayList *list, void *new_element, size_t element_size) {
     return true;
 }
 
-bool al_add_at(ArrayList *list, void *new_element, size_t element_size, size_t pos) {
+bool al_push(ArrayList *list, void *new_element) {
+	return al_add(list, new_element);
+}
+
+bool al_add_at(ArrayList *list, void *new_element, size_t pos) {
     if(!list || !new_element) return false;
-    if(element_size != list->size_elements) return false;
 	if(list->count == list->len)
         if(!al_realloc(list)) return false;
-    if(list->count <= pos) return al_add(list, new_element, element_size);
+    if(list->count <= pos) return al_add(list, new_element);
 	memmove((uint8_t*)list->elements + (list->size_elements * (pos + 1)),
 			(uint8_t*)list->elements + (list->size_elements * pos),
 			list->size_elements * (list->count - pos));
@@ -81,9 +83,8 @@ bool al_add_at(ArrayList *list, void *new_element, size_t element_size, size_t p
     return true;
 }
 
-bool al_add_many(ArrayList *list, void *elements, size_t elements_count, size_t elements_size) {
+bool al_add_many(ArrayList *list, void *elements, size_t elements_count) {
     if(!list || !elements) return false;
-    if(elements_size != list->size_elements) return false;
     if(list->count + elements_count >= list->len) {
         while(list->len < list->count + elements_count) {
             void *check = realloc(list->elements, list->size_elements * list->len * 2);
@@ -92,14 +93,13 @@ bool al_add_many(ArrayList *list, void *elements, size_t elements_count, size_t 
             list->len *= 2;
         }
     }
-	memmove((uint8_t*)list->elements + (list->count * list->size_elements), elements, elements_size);
+	memmove((uint8_t*)list->elements + (list->count * list->size_elements), elements, list->size_elements);
 	list->count += elements_count;
     return true;
 }
 
-bool al_add_many_at(ArrayList *list, void *elements, size_t elements_count, size_t elements_size, size_t pos) {
+bool al_add_many_at(ArrayList *list, void *elements, size_t elements_count, size_t pos) {
 	if(!list || !elements) return false;
-	if(elements_size != list->size_elements) return false;
 	if(list->count <= pos) return al_add_many(list, elements, elements_count, elements_size);
 	if(!list->count + elements_count >= list->len) {
         while(list->len < list->count + elements_count) {
@@ -111,12 +111,16 @@ bool al_add_many_at(ArrayList *list, void *elements, size_t elements_count, size
 	}
 	memmove((uint8_t*)list->elements + ((pos + elements_count) * elements_size),
 			(uint8_t*)list->elements + (pos * element_size),
-			element_size * elements_count);
+			list->size_elements * elements_count);
 	memmove((uint8_t*)list->elements + (pos * element_size),
 			elements,
-			element_size * elements_count);
+			list->size_elements * elements_count);
 	list->count += elements_count;
 	return true;
+}
+
+bool al_update(ArrayList *list, void *update, size_t pos) {
+	return al_input_unsafe(list, update, pos);
 }
 
 ArrayList *al_copy_list(ArrayList *list) {

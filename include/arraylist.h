@@ -16,11 +16,13 @@ ArrayList *al_create(size_t element_size);
 ArrayList *al_create_sized(size_t element_size, size_t len);
 bool       al_realloc(ArrayList *list);
 
-bool al_input_unsafe(ArrayList *list, void *new_element, size_t element_size, size_t position);
-bool al_add(ArrayList *list, void *new_element, size_t element_size);
-bool al_add_at(ArrayList *list, void *new_element, size_t element_size, size_t pos);
+bool al_input_unsafe(ArrayList *list, void *new_element, size_t position);
+bool al_add(ArrayList *list, void *new_element);
+bool al_push(ArrayList *list, void *new_element);
+bool al_add_at(ArrayList *list, void *new_element, size_t pos);
 bool al_add_many(ArrayList *list, void *elements, size_t elements_count, size_t elements_size);
 bool al_add_many_at(ArrayList *list, void *elements, size_t elements_count, size_t elements_size, size_t pos);
+bool al_update(ArrayList *list, void *update, size_t pos);
 
 ArrayList *al_copy_list(ArrayList *list);
 ArrayList *al_concat_list(ArrayList *l1, ArrayList *l2);
