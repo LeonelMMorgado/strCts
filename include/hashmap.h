@@ -23,11 +23,12 @@ bool hm_has_value(HashMap *hm, void *value); /*O(n) search*/
 void*hm_get_value(HashMap *hm, void *key); /*basically doing hm[key] <- returns the pointer to value*/
 void*hm_get_key(HashMap *hm, void *value); /*O(n) search */
 
-bool hm_remove_key(HashMap *hm, void *key, void *out_ptr); /*returns value associated with key*/
-bool hm_remove_value(HashMap *hm, void *value, void *out_ptr); /*return key associated with value, O(n) search*/
+bool hm_remove_key(HashMap *hm, void *key, void *out_ptr); //removes pair from map by finding key, out_ptr is optional for retrieving the pair
+bool hm_remove_value(HashMap *hm, void *value, void *out_ptr); //removes pair from map in O(n) by value, out_ptr is optional for retrieving the pair
 
 bool hm_is_empty(HashMap *hm);
 size_t hm_size(HashMap *hm);
+size_t hm_struct_size(HashMap *hm);
 
 bool hm_destroy(HashMap **hm);
 

@@ -19,7 +19,7 @@ HashSet *hs_create(size_t element_size) {
     }
     hs->list->count = hs->list->len;
     hs->size_element = element_size;
-    hs->elements_count = 0;
+    hs->count = 0;
     return hs;
 }
 
@@ -39,7 +39,7 @@ size_t hs_hash_val(HashSet *hs, void *val, size_t element_size) {
 
 float hs_load_factor(HashSet *hs) {
     if(!hs) return -1;
-    return (float)hs->elements_count/hs->list->len;
+    return (float)hs->count/hs->list->len;
 }
 
 bool hs_has(HashSet *hs, void *val, size_t position) {
@@ -57,7 +57,7 @@ bool hs_add_val(HashSet *hs, void *val, size_t position) {
     return ll_append_tail(ith->elements, val, hs->size_element);
 }
 
-bool rehash(HashSet *hs) {
+bool hs_rehash(HashSet *hs) {
     if(!hs) return false;
     ArrayList *new = al_create_sized(sizeof(HashEntry), hs->list->len * 2);
     new->count = new->len;
@@ -90,7 +90,7 @@ bool hs_add(HashSet *hs, void *val) {
     if(!hs || !val) return false;
     size_t pos = hs_hash_val(hs, val, element_size);
     if(hs_has(hs, val, element_size, pos)) return false;
-    if(hs_add_val(hs, val, element_size, pos)) hs->elements_count++;
+    if(hs_add_val(hs, val, element_size, pos)) hs->count++;
     if(hs_load_factor(hs) > HS_MAX_LOAD_FACTOR) return rehash(hs);
     return true;
 }
@@ -99,18 +99,18 @@ void *hs_remove(HashSet *hs, void *val) {
     if(!hs || !val) return NULL;
     HashEntry *ith = al_get_ith(hs->list, hs_hash_val(hs, val, element_size));
     void *e = ll_remove_val(ith->elements, val);
-    if(e) hs->elements_count--;
+    if(e) hs->count--;
     return e;
 }
 
 bool hs_is_empty(HashSet *hs) {
     if(!hs) return false;
-    return hs->elements_count == 0;
+    return hs->count == 0;
 }
 
 size_t hs_size(HashSet *hs) {
     if(!hs) return 0;
-    return hs->elements_count;
+    return hs->count;
 }
 
 bool hs_destroy(HashSet **hs) {
@@ -123,3 +123,4 @@ bool hs_destroy(HashSet **hs) {
     *hs = NULL;
     return true;
 }
+

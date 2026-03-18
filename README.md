@@ -6,10 +6,10 @@ C Data Structures.
 
 You can use the library in the stb fashion or use it with its headers and sources separately.
 
+# Notes
+
+There was a need to use custom compare functions in the binary tree where it wasn't needed before in other Structures because of how the tree orders itself, whereas in the others the memcmp was only ever used to check equality.
+
 # TODO:
 
-- Better BSTree interface
-
 - Refactor void structs to account for alignment
-
-- Remove size\_element of functions

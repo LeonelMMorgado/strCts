@@ -1,13 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-typedef struct _abst_tree {
-    void *val;
-    size_t size;
-    struct _abst_tree *child;
-    struct _abst_tree *sibling;
-} AbstractTree;
+#include <abstract_tree.h>
 
 AbstractTree *at_create(void *val, size_t size) {
     AbstractTree* node = malloc(sizeof(*node));

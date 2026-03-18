@@ -14,7 +14,7 @@ typedef struct _hs_entry {
 typedef struct _hash_table {
     ArrayList *list;
     uint16_t size_element;
-    size_t elements_count;
+    size_t count;
 } HashSet;
 
 HashSet *hs_create(size_t element_size);
@@ -22,6 +22,9 @@ HashSet *hs_create(size_t element_size);
 uint64_t hs_hash_function(void *val, size_t element_size);
 size_t hs_hash_val(HashSet *hs, void *val, size_t element_size);
 float hs_load_factor(HashSet *hs);
+
+bool hs_add_val(HashSet *hs, void *val, size_t position);//do not use, useful for hashmap only
+bool hs_rehash(HashSet *hs);//do not use, useful for hashmap only
 
 bool hs_add(HashSet *hs, void *val);
 

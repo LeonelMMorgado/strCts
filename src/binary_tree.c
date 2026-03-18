@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <binary_tree.h>
 
 int64_t _bt_max_impl(int64_t a, int64_t b) {
 	return a > b ? a : b;
