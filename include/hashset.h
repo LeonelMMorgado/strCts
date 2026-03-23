@@ -1,10 +1,10 @@
 #ifndef _HASH_SET_H
 #define _HASH_SET_H
 
-#define HS_MAX_LOAD_FACTOR 0.8
-
 #include "arraylist.h"
 #include "linkedlist.h"
+
+#define HS_MAX_LOAD_FACTOR 0.8
 
 typedef struct _hs_entry {
     void *element;
@@ -30,7 +30,7 @@ bool hs_add(HashSet *hs, void *val);
 
 bool hs_has(HashSet *hs, void *val, size_t position);
 
-bool hs_remove(HashSet *hs, void *val, void *out_ptr);
+bool hs_remove(HashSet *hs, void *val);
 
 bool hs_is_empty(HashSet *hs);
 size_t hs_size(HashSet *hs);

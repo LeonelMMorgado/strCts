@@ -100,7 +100,7 @@ bool al_add_many(ArrayList *list, void *elements, size_t elements_count) {
 
 bool al_add_many_at(ArrayList *list, void *elements, size_t elements_count, size_t pos) {
 	if(!list || !elements) return false;
-	if(list->count <= pos) return al_add_many(list, elements, elements_count, elements_size);
+	if(list->count <= pos) return al_add_many(list, elements, elements_count);
 	if(!list->count + elements_count >= list->len) {
         while(list->len < list->count + elements_count) {
             void *check = realloc(list->elements, list->size_elements * list->len * 2);
@@ -109,10 +109,10 @@ bool al_add_many_at(ArrayList *list, void *elements, size_t elements_count, size
             list->len *= 2;
         }
 	}
-	memmove((uint8_t*)list->elements + ((pos + elements_count) * elements_size),
-			(uint8_t*)list->elements + (pos * element_size),
+	memmove((uint8_t*)list->elements + ((pos + elements_count) * list->size_elements),
+			(uint8_t*)list->elements + (pos * list->size_elements),
 			list->size_elements * elements_count);
-	memmove((uint8_t*)list->elements + (pos * element_size),
+	memmove((uint8_t*)list->elements + (pos * list->size_elements),
 			elements,
 			list->size_elements * elements_count);
 	list->count += elements_count;
@@ -224,7 +224,7 @@ bool al_remove_val(ArrayList *list, void *val) {
     if(!list) return false;
     if(!val) return false;
     size_t pos = 0;
-    if(al_has(list, val, element_size, &pos)) {
+    if(al_has(list, val, &pos)) {
         return al_remove_at(list, pos, 0);;
     }
     return false;

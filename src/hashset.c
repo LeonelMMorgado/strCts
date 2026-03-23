@@ -15,7 +15,7 @@ HashSet *hs_create(size_t element_size) {
     }
     for(size_t i = 0; i < hs->list->len; i++) {
         ((HashEntry *)hs->list->elements)[i].valid_entry = false;
-        ((HashEntry *)hs->list->elements)[i].elements = NULL;
+        ((HashEntry *)hs->list->elements)[i].element = NULL;
     }
     hs->list->count = hs->list->len;
     hs->size_element = element_size;
@@ -44,7 +44,7 @@ float hs_load_factor(HashSet *hs) {
 
 bool hs_has(HashSet *hs, void *val, size_t position) {
     if(!hs || !val) return false;
-    return ll_get_node(((HashEntry*)al_get_ith(hs->list, position))->elements, val) != NULL;
+    return ll_get_node(((HashEntry*)al_get_ith(hs->list, position))->element, val) != NULL;
 }
 
 bool hs_add_val(HashSet *hs, void *val, size_t position) {
@@ -52,9 +52,9 @@ bool hs_add_val(HashSet *hs, void *val, size_t position) {
     HashEntry*ith = (HashEntry*)al_get_ith(hs->list, position);
     if(!ith->valid_entry)
         ith->valid_entry = true;
-    if(ith->elements == NULL)
-        ith->elements = ll_create(element_size);
-    return ll_append_tail(ith->elements, val, hs->size_element);
+    if(ith->element == NULL)
+        ith->element = ll_create(hs->size_element);
+    return ll_add_tail(ith->element, val);
 }
 
 bool hs_rehash(HashSet *hs) {
@@ -64,22 +64,23 @@ bool hs_rehash(HashSet *hs) {
     for(size_t i = 0; i < new->len; i++) {
         HashEntry*ith = al_get_ith(new->elements, i);
         ith->valid_entry = false;
-        ith->elements = NULL;
+        ith->element = NULL;
     }
     for(size_t i = 0; i < hs->list->len; i++) {
         HashEntry *elements_at_i = al_get_ith(hs->list, i);
-        if(!elements_at_i->valid_entry || !elements_at_i->elements) continue;
-        LLNode *p = elements_at_i->elements->head;
+        if(!elements_at_i->valid_entry || !elements_at_i->element) continue;
+		LinkedList *elements = elements_at_i->element;
+        LLNode *p = elements->head;
         if(!p) continue;
-        for(size_t j = 0; j < elements_at_i->elements->len; j++) {
+        for(size_t j = 0; j < elements->len; j++) {
             size_t ith = hs_hash_function(p->element, hs->size_element) % new->len;
             HashEntry *new_entry = al_get_ith(new, ith);
             new_entry->valid_entry = true;
-            if(!new_entry->elements)
-                new_entry->elements = ll_create(hs->size_element);
-            ll_append_tail(new_entry->elements, p->element, hs->size_element);
+            if(!new_entry->element)
+                new_entry->element = ll_create(hs->size_element);
+            ll_add_tail(new_entry->element, p->element);
         }
-        ll_destroy(&(elements_at_i->elements));
+        ll_destroy(&elements);
     }
     al_destroy(&(hs->list));
     hs->list = new;
@@ -88,19 +89,19 @@ bool hs_rehash(HashSet *hs) {
 
 bool hs_add(HashSet *hs, void *val) {
     if(!hs || !val) return false;
-    size_t pos = hs_hash_val(hs, val, element_size);
-    if(hs_has(hs, val, element_size, pos)) return false;
-    if(hs_add_val(hs, val, element_size, pos)) hs->count++;
-    if(hs_load_factor(hs) > HS_MAX_LOAD_FACTOR) return rehash(hs);
+    size_t pos = hs_hash_val(hs, val, hs->size_element);
+    if(hs_has(hs, val, pos)) return false;
+    if(hs_add_val(hs, val, pos)) hs->count++;
+    if(hs_load_factor(hs) > HS_MAX_LOAD_FACTOR) return hs_rehash(hs);
     return true;
 }
 
-void *hs_remove(HashSet *hs, void *val) {
+bool hs_remove(HashSet *hs, void *val) {
     if(!hs || !val) return NULL;
-    HashEntry *ith = al_get_ith(hs->list, hs_hash_val(hs, val, element_size));
-    void *e = ll_remove_val(ith->elements, val);
-    if(e) hs->count--;
-    return e;
+    HashEntry *ith = al_get_ith(hs->list, hs_hash_val(hs, val, hs->size_element));
+	bool r = ll_remove_val(ith->element, val);
+	if(r) hs->count--;
+	return r;
 }
 
 bool hs_is_empty(HashSet *hs) {
@@ -116,9 +117,11 @@ size_t hs_size(HashSet *hs) {
 bool hs_destroy(HashSet **hs) {
     if(!hs) return false;
     if(!*hs) return false;
-    for(size_t i = 0; i < (*hs)->list->len; i++)
-        ll_destroy(&(((HashEntry*)al_get_ith((*hs)->list, i))->elements));
-    al_destroy(&((*hs)->list));
+    for(size_t i = 0; i < (*hs)->list->len; i++) {
+		LinkedList *list = (((HashEntry*)al_get_ith((*hs)->list, i))->element);
+        ll_destroy(&list);
+	}
+	al_destroy(&((*hs)->list));
     free(*hs);
     *hs = NULL;
     return true;

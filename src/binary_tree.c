@@ -253,8 +253,6 @@ BinaryTreeNode *bt_search(BinaryTree *root, void *val){
 //     return root;
 // }
 
-#ifdef __DEBUG__
-#include <math.h> //should also compile with -lm
 int _bt_display_tree(char ** buffer, BinaryTreeNode *no, int level, double h_position, int cols){
 	char * ptr;
 	int i, col, a, b;
@@ -310,7 +308,6 @@ void _bt_print_internal(BinaryTreeNode *no, int rows, int cols){
 void bt_print(BinaryTree *root, int rows, int cols) {
 	_bt_print_internal(root->root, rows, cols);
 }
-#endif //__DEBUG__
 
 void bt_delete_node(BinaryTreeNode *node) {
 	if(!node) return;

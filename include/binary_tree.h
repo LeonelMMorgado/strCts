@@ -11,7 +11,8 @@ bt_print(root, 300, 80);
 
 bt_delete(&root);
 */
-
+#ifndef _BINARY_SEARCH_TREE_H
+#define _BINARY_SEARCH_TREE_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -71,9 +72,11 @@ bool bt_remove(BinaryTree *root, void *val);
 BinaryTreeNode *bt_search(BinaryTree *root, void *val);
 
 // BinaryTreeNode *bt_invert_tree(BinaryTreeNode *root);
-//
+
 void bt_print(BinaryTree *root, int rows, int cols);
 
 void bt_delete_node(BinaryTreeNode *node);
 void bt_delete(BinaryTree **root);
+
+#endif
 

@@ -12,4 +12,10 @@ There was a need to use custom compare functions in the binary tree where it was
 
 # TODO:
 
+- Redo strcts.h
+
+- Check hashmap mem erros
+
+- Add function parameters for comparation in each ds
+
 - Refactor void structs to account for alignment
