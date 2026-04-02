@@ -1,15 +1,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <abstract_tree.h>
+#include <abstracttree.h>
 
-AbstractTree *at_create(void *val, size_t size) {
+AbstractTree *at_create(void *val, size_t size, compare_fn compare_function, destroy_fn destroy_function) {
     AbstractTree* node = malloc(sizeof(*node));
     if(!node) return NULL;
-    node->val = val;
+	node->val = malloc(size);
+	if(!node->val) {
+		free(node);
+		return NULL;
+	}
+	memcpy(node->val, val, size);
     node->size = size;
     node->child = NULL;
     node->sibling = NULL;
+	node->compare_function = compare_function;
+	node->destroy_function = destroy_function;
     return node;
 }
 
@@ -31,7 +38,7 @@ void _at_print_tree_rec(AbstractTree* root, int level) {
         else 
             printf("└");
     }
-    printf("%p\n", root->val); //add way to print accordingly
+    printf("%p\n", root->val); //TODO: add way to print accordingly
     AbstractTree* child = root->child;
     while(child != NULL) {
         _at_print_tree_rec(child, level + 1);
@@ -42,3 +49,16 @@ void _at_print_tree_rec(AbstractTree* root, int level) {
 void at_print_tree(AbstractTree *root) {
     _at_print_tree_rec(root, 0);
 }
+
+bool at_destroy(AbstractTree **root) {
+	if(!*root) return false;
+	at_destroy((*root)->child);
+	at_destroy((*root)->sibling);
+	if((*root)->destroy_function)
+		(*root)->destroy_function((*root)->val);
+	free((*root)->val);
+	free(*root);
+	*root = NULL;
+	return true;
+}
+

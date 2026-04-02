@@ -17,24 +17,29 @@ HashMapPair *_hmp_create(void *key, void *value, size_t size_key, size_t size_va
 	return hmp;
 }
 
-HashMap *hm_create(size_t size_key, size_t size_value) {
+HashMap *hm_create(size_t size_key, size_t size_value, compare_fn compare_key, compare_fn compare_value, destroy_fn destroy_key, destroy_fn destroy_value) {
 	HashMap *hm = malloc(sizeof(*hm));
 	if(!hm) return NULL;
-	hm->hs = hs_create(sizeof(HashMapPair));
+	hm->hs = hs_create(sizeof(HashMapPair), NULL, NULL);
 	if(!(hm->hs)) {
 		free(hm);
 		return NULL;
 	}
 	hm->key_size = size_key;
 	hm->value_size = size_value;
+	
+	if(compare_key) hm->compare_key = compare_key;
+	else hm->compare_key = &memcmp;
+	if(compare_value) hm->compare_value = compare_value;
+	else hm->compare_value = &memcmp;
+	hm->destroy_key = destroy_key;
+	hm->destroy_value = destroy_value;
 	return hm;
 }
 
 bool hm_add(HashMap *hm, void *key, void *value) {
 	if(!hm || !key || !value) return false;
-	if(hm_has_key(hm, key)) //could return position?
-		if(memcmp(hm_get_value(hm, key), value, hm->value_size) == 0) 
-			return false;
+	if(hm_has_key(hm, key)) return false;
 	HashMapPair *new_entry = _hmp_create(key, value, hm->key_size, hm->value_size);
 	if(!new_entry) return false;
 	size_t pos = hs_hash_val(hm->hs, key, hm->key_size);
@@ -56,7 +61,7 @@ bool hm_has_key(HashMap *hm, void *key) {
 	int res = 0;
 	do {
 		HashMapPair *hmp = p->element;
-		res = memcmp(hmp->key, key, hm->key_size);
+		res = hm->compare_key(hmp->key, key, hm->key_size);
 		p = p->next;
 	} while(res != 0 && p != head); 
 	if(res == 0) return true;
@@ -78,7 +83,7 @@ bool hm_has_value(HashMap *hm, void *value) {
 		int res = 0;
 		do {
 			HashMapPair *hmp = p->element;
-			res = memcmp(hmp->value, value, hm->key_size);
+			res = hm->compare_value(hmp->value, value, hm->value_size);
 			p = p->next;
 		} while(res != 0 && p != head);
 		if(res == 0) found = true;
@@ -101,7 +106,7 @@ void*hm_get_value(HashMap *hm, void *key) {
 	int res = 0;
 	do {
 		hmp = p->element;
-		res = memcmp(hmp->key, key, hm->key_size);
+		res = hm->compare_key(hmp->key, key, hm->key_size);
 		p = p->next;
 	} while(res != 0 && p != head); 
 	if(res == 0) return hmp->value;
@@ -123,7 +128,7 @@ void*hm_get_key(HashMap *hm, void *value) {
 		int res = 0;
 		do {
 			hmp = p->element;
-			res = memcmp(hmp->value, value, hm->key_size);
+			res = hm->compare_value(hmp->value, value, hm->value_size);
 			p = p->next;
 		} while(res != 0 && p != head);
 		if(res == 0) return hmp->key;
@@ -132,30 +137,30 @@ void*hm_get_key(HashMap *hm, void *value) {
 }
 
 bool hm_remove_key(HashMap *hm, void *key) {
-	if(!hm || !key) return NULL;
+	if(!hm || !key) return false;
 	size_t pos = hs_hash_val(hm->hs, key, hm->key_size);
     HashEntry*ith = (HashEntry*)al_get_ith(hm->hs->list, pos);
-	if(!(ith->valid_entry)) return NULL;
-	if(!(ith->element)) return NULL;
+	if(!(ith->valid_entry)) return false;
+	if(!(ith->element)) return false;
 	LinkedList *ll = ith->element;
 	LLNode *head = ll->head;
-	if(!head) return NULL;
+	if(!head) return false;
 	LLNode *p = head;
 	HashMapPair *hmp;
 	int res = 0;
 	do {
 		hmp = p->element;
-		res = memcmp(hmp->key, key, hm->key_size);
+		res = hm->compare_key(hmp->key, key, hm->key_size);
 		p = p->next;
 	} while(res != 0 && p != head); 
 	if(res == 0) {
-		ll_remove_val(ll, hmp);
+		return ll_remove_val(ll, hmp);
 	}
-	return NULL;
+	return false;
 }
 
 bool hm_remove_value(HashMap *hm, void *value) {
-	if(!hm || !value) return NULL;
+	if(!hm || !value) return false;
 	ArrayList *list = hm->hs->list;
 	for(size_t i = 0; i < list->len; i++) {
 		HashEntry entry = ((HashEntry*)(list->elements))[i];
@@ -169,14 +174,14 @@ bool hm_remove_value(HashMap *hm, void *value) {
 		int res = 0;
 		do {
 			hmp = p->element;
-			res = memcmp(hmp->value, value, hm->key_size);
+			res = hm->compare_value(hmp->value, value, hm->value_size);
 			p = p->next;
 		} while(res != 0 && p != head);
 		if(res == 0) {
-			ll_remove_val(ll, hmp);
+			return ll_remove_val(ll, hmp);
 		}
 	}
-	return NULL;
+	return false;
 }
 
 bool hm_is_empty(HashMap *hm) {
@@ -214,9 +219,20 @@ size_t hm_struct_size(HashMap *hm) {
 
 bool hm_destroy(HashMap **hm) {
 	if(!hm || !*hm) return false;
-	//FIXME: destroy all HashMapPairs;
+	for(size_t i = 0; i < hm->hs->list->len; i++) {
+		HashEntry ith = ((HashEntry*)(hm->hs->list->elements))[i];
+		if(ith.valid_entry == false) continue;
+		if(ith.element == NULL) continue;
+		LinkedList *ll = ith.element;
+		LLNode *p = ll->head;
+		do {
+			hm->destroy_key(((HashMapPair*)(p->element))->key);
+			hm->destroy_value(((HashMapPair*)(p->element))->value);
+		} while(p != head);
+	}
 	if(!hs_destroy(&((*hm)->hs))) return false;
 	free(*hm);
 	*hm = NULL;
 	return true;
 }
+

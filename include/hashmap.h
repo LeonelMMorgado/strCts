@@ -1,6 +1,7 @@
 #ifndef _HASH_MAP_H
 #define _HASH_MAP_H
 
+#include "memclass.h"
 #include "hashset.h"
 
 typedef struct _hash_map_pair {
@@ -12,9 +13,13 @@ typedef struct _hash_map {
 	HashSet *hs;
 	size_t key_size;
 	size_t value_size;
+	compare_fn compare_key;
+	compare_fn compare_value;
+	destroy_fn destroy_key;
+	destroy_fn destroy_value;
 } HashMap;
 
-HashMap *hm_create(size_t size_key, size_t size_value);
+HashMap *hm_create(size_t size_key, size_t size_value, compare_fn compare_key, compare_fn compare_value, destroy_fn destroy_key, destroy_fn destroy_value);
 
 bool hm_add(HashMap *hm, void *key, void *value);
 

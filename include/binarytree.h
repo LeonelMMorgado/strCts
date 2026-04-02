@@ -19,6 +19,7 @@ bt_delete(&root);
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include "memclass.h"
 
 #define bt_insert_const(bst, val, type) \
 	do {\
@@ -39,26 +40,15 @@ typedef struct _bstree_node {
 	int64_t height;
 } BinaryTreeNode;
 
-typedef int (*cmp_function)(const void *val1, const void *val2, size_t element_size);
-
 typedef struct _binary_search_tree {
     size_t size_element;
     BinaryTreeNode *root;
-	cmp_function compare_function;
+	compare_fn compare_function;
+	destroy_fn destroy_function;
 } BinaryTree;
 
-//basic compare functions for inclusion search and removal
-int bt_common_int_compare(const void *val1, const void *val2, size_t element_size);
-int bt_common_uint_compare(const void *val1, const void *val2, size_t element_size);
-int bt_common_i64_compare(const void *val1, const void *val2, size_t element_size);
-int bt_common_u64_compare(const void *val1, const void *val2, size_t element_size);
-int bt_common_float_compare(const void *val1, const void *val2, size_t element_size);
-int bt_common_double_compare(const void *val1, const void *val2, size_t element_size);
-int bt_common_string_compare(const void *val1, const void *val2, size_t element_size);
-
-
 BinaryTreeNode *bt_create_node(void *val, size_t element_size);
-BinaryTree *bt_create(size_t element_size, cmp_function compare_function);
+BinaryTree *bt_create(size_t element_size, compare_fn compare_function, destroy_fn destroy_function);
 
 int64_t bt_height(BinaryTreeNode *root);
 void bt_update_height(BinaryTreeNode *root);
@@ -75,7 +65,7 @@ BinaryTreeNode *bt_search(BinaryTree *root, void *val);
 
 void bt_print(BinaryTree *root, int rows, int cols);
 
-void bt_delete_node(BinaryTreeNode *node);
+void bt_delete_node(BinaryTreeNode *node, destroy_fn destroy_function);
 void bt_delete(BinaryTree **root);
 
 #endif

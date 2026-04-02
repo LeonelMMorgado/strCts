@@ -1,6 +1,7 @@
 #ifndef _HASH_SET_H
 #define _HASH_SET_H
 
+#include "memclass.h"
 #include "arraylist.h"
 #include "linkedlist.h"
 
@@ -15,9 +16,11 @@ typedef struct _hash_table {
     ArrayList *list;
     uint16_t size_element;
     size_t count;
+	compare_fn compare_function;
+	destroy_fn destroy_function;
 } HashSet;
 
-HashSet *hs_create(size_t element_size);
+HashSet *hs_create(size_t element_size, compare_fn compare_function, destroy_fn destroy_function);
 
 uint64_t hs_hash_function(void *val, size_t element_size);
 size_t hs_hash_val(HashSet *hs, void *val, size_t element_size);

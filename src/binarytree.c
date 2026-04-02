@@ -3,52 +3,10 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#include <binary_tree.h>
+#include <binarytree.h>
 
 int64_t _bt_max_impl(int64_t a, int64_t b) {
 	return a > b ? a : b;
-}
-
-int bt_common_int_compare(const void *val1, const void *val2, size_t element_size) {
-	int v1 = *(int*)val1;
-	int v2 = *(int*)val2;
-	return (v1 > v2) - (v1 < v2);
-}
-
-int bt_common_uint_compare(const void *val1, const void *val2, size_t element_size) {
-	uint32_t v1 = *(uint32_t*)val1;
-	uint32_t v2 = *(uint32_t*)val2;
-	return (v1 > v2) - (v1 < v2);
-}
-
-int bt_common_i64_compare(const void *val1, const void *val2, size_t element_size) {
-	int64_t v1 = *(int64_t*)val1;
-	int64_t v2 = *(int64_t*)val2;
-	return (v1 > v2) - (v1 < v2);
-}
-
-int bt_common_u64_compare(const void *val1, const void *val2, size_t element_size) {
-	uint64_t v1 = *(uint64_t*)val1;
-	uint64_t v2 = *(uint64_t*)val2;
-	return (v1 > v2) - (v1 < v2);
-}
-
-int bt_common_float_compare(const void *val1, const void *val2, size_t element_size) {
-	float v1 = *(float*)val1;
-	float v2 = *(float*)val2;
-	return (v1 > v2) - (v1 < v2);
-}
-
-int bt_common_double_compare(const void *val1, const void *val2, size_t element_size) {
-	double v1 = *(double*)val1;
-	double v2 = *(double*)val2;
-	return (v1 > v2) - (v1 < v2);
-}
-
-int bt_common_string_compare(const void *val1, const void *val2, size_t element_size) {
-	char *s1 = *(char**)val1;
-	char *s2 = *(char**)val2;
-	return strcmp(s1, s2);
 }
 
 BinaryTreeNode *bt_create_node(void *val, size_t element_size) {
@@ -67,15 +25,14 @@ BinaryTreeNode *bt_create_node(void *val, size_t element_size) {
 	return n;
 }
 
-BinaryTree *bt_create(size_t element_size, cmp_function compare_function) {
+BinaryTree *bt_create(size_t element_size, compare_fn compare_function, destroy_fn destroy_function) {
 	BinaryTree *bst = malloc(sizeof(*bst));
 	if(!bst) return NULL;
 	bst->root = NULL;
 	bst->size_element = element_size;
-	if(compare_function)
-		bst->compare_function = compare_function;
-	else
-		bst->compare_function = &memcmp;
+	if(compare_function) bst->compare_function = compare_function;
+	else bst->compare_function = &memcmp;
+	bst->destroy_function = destroy_function;
 	return bst;
 }
 
@@ -309,16 +266,18 @@ void bt_print(BinaryTree *root, int rows, int cols) {
 	_bt_print_internal(root->root, rows, cols);
 }
 
-void bt_delete_node(BinaryTreeNode *node) {
+void bt_delete_node(BinaryTreeNode *node, destroy_fn destroy_function) {
 	if(!node) return;
 	bt_delete_node(node->left);
 	bt_delete_node(node->right);
+	if(destroy_function) destroy_function(node->val);
+	free(node->val);
 	free(node);
 }
 
 void bt_delete(BinaryTree **root) {
 	if(!root || !(*root)) return;
-	bt_delete_node((*root)->root);
+	bt_delete_node((*root)->root, (*root)->destroy_function);
 	free(*root);
 	*root = NULL;
 }

@@ -5,10 +5,10 @@
 #include <arraylist.h>
 #include <hashset.h>
 
-HashSet *hs_create(size_t element_size) {
+HashSet *hs_create(size_t element_size, compare_fn compare_function, destroy_fn destroy_function) {
     HashSet *hs = malloc(sizeof(*hs));
     if(!hs) return NULL;
-    hs->list = al_create(sizeof(HashEntry));
+    hs->list = al_create(sizeof(HashEntry), NULL, NULL);
     if(!hs->list) {
         free(hs);
         return NULL;
@@ -20,6 +20,9 @@ HashSet *hs_create(size_t element_size) {
     hs->list->count = hs->list->len;
     hs->size_element = element_size;
     hs->count = 0;
+	if(compare_function) hs->compare_function = compare_function;
+	else hs->compare_function = &memcmp;
+	hs->destroy_function = destroy_function;
     return hs;
 }
 
@@ -53,16 +56,16 @@ bool hs_add_val(HashSet *hs, void *val, size_t position) {
     if(!ith->valid_entry)
         ith->valid_entry = true;
     if(ith->element == NULL)
-        ith->element = ll_create(hs->size_element);
+        ith->element = ll_create(hs->size_element, hs->compare_function, hs->destroy_function);
     return ll_add_tail(ith->element, val);
 }
 
 bool hs_rehash(HashSet *hs) {
     if(!hs) return false;
-    ArrayList *new = al_create_sized(sizeof(HashEntry), hs->list->len * 2);
+    ArrayList *new = al_create_sized(sizeof(HashEntry), hs->list->len * 2, NULL, NULL);
     new->count = new->len;
     for(size_t i = 0; i < new->len; i++) {
-        HashEntry*ith = al_get_ith(new->elements, i);
+        HashEntry*ith = al_get_ith(new, i);
         ith->valid_entry = false;
         ith->element = NULL;
     }
@@ -77,7 +80,7 @@ bool hs_rehash(HashSet *hs) {
             HashEntry *new_entry = al_get_ith(new, ith);
             new_entry->valid_entry = true;
             if(!new_entry->element)
-                new_entry->element = ll_create(hs->size_element);
+                new_entry->element = ll_create(hs->size_element, hs->compare_function, hs->destroy_function);
             ll_add_tail(new_entry->element, p->element);
         }
         ll_destroy(&elements);
