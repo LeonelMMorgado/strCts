@@ -11,6 +11,7 @@ You can use the library in the stb fashion or use it with its headers and source
 len => elements allocated
 count => elements in use
 size\_elements => size in bytes of elements stored
+destroy functions -> free every layer on the struct and nullify the pointer
 
 # TODO:
 
@@ -18,7 +19,7 @@ size\_elements => size in bytes of elements stored
 
 - Refactor void structs to account for alignment
 
-- Shrinkage of arraylist
+- Shrinkage of list structs
 
 - Error check in dynamic array
 
@@ -26,12 +27,12 @@ size\_elements => size in bytes of elements stored
 
 - Add custom hashfunction support
 
-- Iterators
+- Add iterators
 
 - Error codes
 
 - Thread-safety
 
-- Documentation comments
+- Documentation
 
-- Unit tests
+- tests
