@@ -294,13 +294,14 @@ bool al_clear(ArrayList *list) {
 }
 
 void _destroy_iter(void *element, void *arg) {
-	pointer_destroy(element);
+	ArrayList *list = arg;
+	list->destroy_function(element);
 }
 
 bool al_destroy(ArrayList **list) {
     if(!list) return false;
     if(!*list) return false;
-	if((*list)->destroy_function) al_iterate(*list, &_destroy_iter, NULL);
+	if((*list)->destroy_function) al_iterate(*list, &_destroy_iter, list);
     free((*list)->elements);
     (*list)->elements = NULL;
     (*list)->len = 0;
