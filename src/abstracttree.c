@@ -3,21 +3,35 @@
 #include <string.h>
 #include <abstracttree.h>
 
-AbstractTree *at_create(void *val, size_t size, compare_fn compare_function, destroy_fn destroy_function) {
+AbstractTree *at_create(void *val, size_t size_elements) {
+	return at_create_full(val, size_elements, NULL, NULL);
+}
+
+AbstractTree *at_create_full(void *val, size_t size_elements, compare_fn compare_function, destroy_fn destroy_function) {
     AbstractTree* node = malloc(sizeof(*node));
     if(!node) return NULL;
-	node->val = malloc(size);
-	if(!node->val) {
+	node->element = malloc(size_elements);
+	if(!node->element) {
 		free(node);
 		return NULL;
 	}
-	memcpy(node->val, val, size);
-    node->size = size;
+	memcpy(node->element, val, size_elements);
+    node->size_elements = size_elements;
     node->child = NULL;
     node->sibling = NULL;
 	node->compare_function = compare_function;
 	node->destroy_function = destroy_function;
     return node;
+}
+
+void at_change_comparator(AbstractTree *tree, compare_fn compare_function) {
+	if(!tree || !compare_function) return;
+	tree->compare_function = compare_function;
+}
+
+void at_change_destroyer(AbstractTree *tree, destroy_fn destroy_function) {
+	if(!tree || !destroy_function) return;
+	tree->destroy_function = destroy_function;
 }
 
 void at_add_child(AbstractTree* parent, AbstractTree* child) {
@@ -38,7 +52,7 @@ void _at_print_tree_rec(AbstractTree* root, int level) {
         else 
             printf("└");
     }
-    printf("%p\n", root->val); //TODO: add way to print accordingly
+    printf("%p\n", root->element); //TODO: add way to print accordingly
     AbstractTree* child = root->child;
     while(child != NULL) {
         _at_print_tree_rec(child, level + 1);
@@ -52,11 +66,11 @@ void at_print_tree(AbstractTree *root) {
 
 bool at_destroy(AbstractTree **root) {
 	if(!*root) return false;
-	at_destroy((*root)->child);
-	at_destroy((*root)->sibling);
+	at_destroy(&((*root)->child));
+	at_destroy(&((*root)->sibling));
 	if((*root)->destroy_function)
-		(*root)->destroy_function((*root)->val);
-	free((*root)->val);
+		(*root)->destroy_function((*root)->element);
+	free((*root)->element);
 	free(*root);
 	*root = NULL;
 	return true;

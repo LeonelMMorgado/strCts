@@ -9,32 +9,43 @@ ArrayList *al_alloc() {
     return list;
 }
 
-ArrayList *al_create(size_t element_size, compare_fn compare_function, destroy_fn destroy_function) {
-    ArrayList *list = al_alloc();
-    if(!list) return NULL;
-    list->elements = calloc(256, element_size);
-    if(!(list->elements)) {
-        free(list);
-        return NULL;
-    }
-    list->len = 256;
-    list->size_elements = element_size;
-	if(compare_function) list->compare_function = compare_function;
-	else list->compare_function = &memcmp;
-	list->destroy_function = destroy_function;
-    return list;
+ArrayList *al_create(size_t size_elements) {
+    return al_create_full(size_elements, NULL, NULL);
 }
 
-ArrayList *al_create_sized(size_t element_size, size_t len, compare_fn compare_function, destroy_fn destroy_function) {
+ArrayList *al_create_sized(size_t size_elements, size_t len) {
     ArrayList *list = al_alloc();
     if(!list) return NULL;
-    list->elements = calloc(len, element_size);
+    list->elements = calloc(len, size_elements);
     if(!(list->elements)) {
         free(list);
         return NULL;
     }
     list->len = len;
-    list->size_elements = element_size;
+    list->size_elements = size_elements;
+	list->compare_function = &memcmp;
+	list->destroy_function = NULL;
+    return list;
+}
+
+ArrayList *al_create_comparator(size_t size_elements, compare_fn compare_function) {
+	return al_create_full(size_elements, compare_function, NULL);
+}
+
+ArrayList *al_create_destroyer(size_t size_elements, destroy_fn destroy_function) {
+	return al_create_full(size_elements, NULL, destroy_function);
+}
+
+ArrayList *al_create_full(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function) {
+    ArrayList *list = al_alloc();
+    if(!list) return NULL;
+    list->elements = calloc(256, size_elements);
+    if(!(list->elements)) {
+        free(list);
+        return NULL;
+    }
+    list->len = 256;
+    list->size_elements = size_elements;
 	if(compare_function) list->compare_function = compare_function;
 	else list->compare_function = &memcmp;
 	list->destroy_function = destroy_function;
@@ -52,6 +63,16 @@ bool al_realloc(ArrayList *list) {
     return true;
 }
 
+void al_change_comparator(ArrayList *list, compare_fn compare_function) {
+	if(!list || !compare_function) return;
+	list->compare_function = compare_function;
+}
+
+void al_change_destroyer(ArrayList *list, destroy_fn destroy_function) {
+	if(!list || !destroy_function) return;
+	list->destroy_function = destroy_function;
+}
+
 //This function does not increment list count
 bool al_input_unsafe(ArrayList *list, void *new_element, size_t position) {
     if(!list || !new_element) return false;
@@ -60,6 +81,10 @@ bool al_input_unsafe(ArrayList *list, void *new_element, size_t position) {
     uint8_t *dest = (uint8_t *)list->elements + (list->size_elements * position);
     memmove(dest, (uint8_t *)new_element, list->size_elements);
     return true;
+}
+
+bool al_insert(ArrayList *list, void *new_element) {
+	return al_add(list, new_element);
 }
 
 bool al_add(ArrayList *list, void *new_element) {
@@ -131,7 +156,9 @@ bool al_update(ArrayList *list, void *update, size_t pos) {
 
 ArrayList *al_copy_list(ArrayList *list) {
     if(!list) return NULL;
-    ArrayList *cpy = al_create_sized(list->size_elements, list->len, list->compare_function, list->destroy_function);
+    ArrayList *cpy = al_create_sized(list->size_elements, list->len);
+	al_change_comparator(cpy, list->compare_function);
+	al_change_destroyer(cpy, list->destroy_function);
 	memmove(cpy->elements, list->elements, list->count * list->size_elements);
 	cpy->count = list->count;
     return cpy;
@@ -221,6 +248,7 @@ bool al_remove_at(ArrayList *list, size_t pos, void *out_ptr) {
     if(list->count == 0 || list->count <= pos) return false;
     void *src = (uint8_t*)list->elements + (list->size_elements * pos);
     if(out_ptr) memmove(out_ptr, src, list->size_elements);
+	//FIXME: for EVERY remove in the project, there can be memory leak if destroy_function is not used in member
     memmove(src,
             (uint8_t *)src + list->size_elements,
             list->size_elements * (list->count - pos - 1));
@@ -281,3 +309,4 @@ bool al_destroy(ArrayList **list) {
     *list = NULL;
     return true;
 }
+

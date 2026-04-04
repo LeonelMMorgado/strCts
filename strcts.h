@@ -112,10 +112,16 @@ int string_compare(const void *val1, const void *val2, size_t size_element);
 void pointer_destroy(void *element);
 
 //ArrayList functions
-ArrayList *al_create(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function);
-ArrayList *al_create_sized(size_t size_elements, size_t len, compare_fn compare_function, destroy_fn destroy_function);
+ArrayList *al_create(size_t size_elements);
+ArrayList *al_create_sized(size_t size_elements, size_t len);
+ArrayList *al_create_comparator(size_t size_elements, compare_fn compare_function);
+ArrayList *al_create_destroyer(size_t size_elements, destroy_fn destroy_function);
+ArrayList *al_create_full(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function);
+void       al_change_comparator(ArrayList *list, compare_fn compare_function);
+void       al_change_destroyer(ArrayList *list, destroy_fn destroy_function);
 bool       al_realloc(ArrayList *list);
 bool al_input_unsafe(ArrayList *list, void *new_element, size_t position);
+bool al_insert(ArrayList *list, void *new_element);
 bool al_add(ArrayList *list, void *new_element);
 bool al_push(ArrayList *list, void *new_element);
 bool al_add_at(ArrayList *list, void *new_element, size_t pos);
@@ -123,13 +129,13 @@ bool al_add_many(ArrayList *list, void *elements, size_t elements_count);
 bool al_add_many_at(ArrayList *list, void *elements, size_t elements_count, size_t pos);
 bool al_update(ArrayList *list, void *update, size_t pos);
 ArrayList *al_copy_list(ArrayList *list);
-void al_concat_list(ArrayList *l1, ArrayList *l2);
+void       al_concat_list(ArrayList *l1, ArrayList *l2);
 ArrayList *al_concat_list_new(ArrayList *l1, ArrayList *l2);
 size_t al_size(ArrayList *list);
-bool al_is_empty(ArrayList *list);
-bool al_has(ArrayList *list, void *val, size_t *pos);
-bool al_has_at(ArrayList *list, void *val, size_t pos);
-void *al_get_ith(ArrayList *list, size_t i);
+bool   al_is_empty(ArrayList *list);
+bool   al_has(ArrayList *list, void *val, size_t *pos);
+bool   al_has_at(ArrayList *list, void *val, size_t pos);
+void  *al_get_ith(ArrayList *list, size_t i);
 bool al_sort(ArrayList *list);
 void al_iterate(ArrayList *list, iter_fn func, void *arg);
 bool al_remove_at(ArrayList *list, size_t pos, void *out_ptr);
@@ -141,7 +147,12 @@ bool al_clear(ArrayList *list);
 bool al_destroy(ArrayList **list);
 
 //LinkedList functions
-LinkedList *ll_create(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function);
+LinkedList *ll_create(size_t size_elements);
+LinkedList *ll_create_comparator(size_t size_elements, compare_fn compare_function);
+LinkedList *ll_create_destroyer(size_t size_elements, destroy_fn destroy_function);
+LinkedList *ll_create_full(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function);
+void        ll_change_comparator(LinkedList *list, compare_fn compare_function);
+void        ll_change_destroyer(LinkedList *list, destroy_fn destroy_function);
 bool ll_add_tail(LinkedList *list, void *val);
 bool ll_add_head(LinkedList *list, void *val);
 bool ll_add_at(LinkedList *list, void *val, size_t pos);
@@ -160,7 +171,12 @@ bool ll_remove_at(LinkedList *list, size_t pos, void *out_ptr);
 void ll_destroy(LinkedList **list);
 
 //HashSet functions
-HashSet *hs_create(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function);
+HashSet *hs_create(size_t size_elements);
+HashSet *hs_create_comparator(size_t size_elements, compare_fn compare_function);
+HashSet *hs_create_destroyer(size_t size_elements, destroy_fn destroy_function);
+HashSet *hs_create_full(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function);
+void     hs_change_comparator(HashSet *hs, compare_fn compare_function);
+void     hs_change_destroyer(HashSet *hs, destroy_fn destroy_function);
 uint64_t hs_hash_function(void *val, size_t size_element);
 size_t hs_hash_val(HashSet *hs, void *val, size_t size_elements);
 float hs_load_factor(HashSet *hs);
@@ -169,12 +185,13 @@ bool hs_rehash(HashSet *hs);//do not use, useful for hashmap only
 bool hs_add(HashSet *hs, void *val);
 bool hs_has(HashSet *hs, void *val, size_t position);
 bool hs_remove(HashSet *hs, void *val);
-bool hs_is_empty(HashSet *hs);
+bool   hs_is_empty(HashSet *hs);
 size_t hs_size(HashSet *hs);
 bool hs_destroy(HashSet **hs);
 
 //HashMap functions
-HashMap *hm_create(size_t size_key, size_t size_value, compare_fn compare_key, compare_fn compare_value, destroy_fn destroy_key, destroy_fn destroy_value);
+HashMap *hm_create(size_t size_key, size_t size_value);
+HashMap *hm_create_full(size_t size_key, size_t size_value, compare_fn compare_key, compare_fn compare_value, destroy_fn destroy_key, destroy_fn destroy_value);
 bool hm_add(HashMap *hm, void *key, void *value);
 bool hm_has_key(HashMap *hm, void *key);
 bool hm_has_value(HashMap *hm, void *value); /*O(n) search*/
@@ -182,28 +199,36 @@ void*hm_get_value(HashMap *hm, void *key); /*basically doing hm[key] <- returns 
 void*hm_get_key(HashMap *hm, void *value); /*O(n) search */
 bool hm_remove_key(HashMap *hm, void *key); //removes pair from map by finding key
 bool hm_remove_value(HashMap *hm, void *value); //removes pair from map in O(n) by value
-bool hm_is_empty(HashMap *hm);
+bool   hm_is_empty(HashMap *hm);
 size_t hm_size(HashMap *hm);
 size_t hm_struct_size(HashMap *hm);
 bool hm_destroy(HashMap **hm);
 
 //BinaryTree functions
 BinaryTreeNode *bt_create_node(void *val, size_t size_elements);
-BinaryTree *bt_create(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function);
+BinaryTree     *bt_create(size_t size_elements);
+BinaryTree     *bt_create_comparator(size_t size_elements, compare_fn compare_function);
+BinaryTree     *bt_create_destroyer(size_t size_elements, destroy_fn destroy_function);
+BinaryTree     *bt_create_full(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function);
+void            bt_change_comparator(BinaryTree *tree, compare_fn compare_function);
+void            bt_change_destroyer(BinaryTree *tree, destroy_fn destroy_function);
 int64_t bt_height(BinaryTreeNode *root);
-void bt_update_height(BinaryTreeNode *root);
+void    bt_update_height(BinaryTreeNode *root);
 int64_t bt_balance(BinaryTreeNode *root);
-bool bt_is_balanced(BinaryTreeNode *root);
+bool    bt_is_balanced(BinaryTreeNode *root);
 bool bt_insert(BinaryTree *tree, void *val);
 bool bt_remove(BinaryTree *tree, void *val);
 BinaryTreeNode *bt_search(BinaryTree *tree, void *val);
 // BinaryTreeNode *bt_invert_tree(BinaryTreeNode *root);
 void bt_print(BinaryTree *tree, int rows, int cols);
-void bt_delete_node(BinaryTreeNode *node, destroy_fn destroy_function);
-void bt_delete(BinaryTree **tree);
+void bt_destroy_node(BinaryTreeNode *node, destroy_fn destroy_function);
+void bt_destroy(BinaryTree **tree);
 
 //AbstractTree functions
-AbstractTree *at_create(void *val, size_t size_elements, compare_fn compare_function, destroy_fn destroy_function);
+AbstractTree *at_create(void *val, size_t size_elements);
+AbstractTree *at_create_full(void *val, size_t size_elements, compare_fn compare_function, destroy_fn destroy_function);
+void          at_change_comparator(AbstractTree *tree, compare_fn compare_function);
+void          at_change_destroyer(AbstractTree *tree, destroy_fn destroy_function);
 void at_add_child(AbstractTree* parent, AbstractTree* child);
 void at_print_tree(AbstractTree *tree);
 bool at_destroy(AbstractTree **tree);
@@ -451,28 +476,28 @@ void pointer_destroy(void *val) {
 		(array) = NULL; \
 	} while(0)
 
+#define al_insert_const(list, val, type) \
+	do { \
+		type var = (val); \
+		al_add((list), &var); \
+	} while(0)
+
+#define al_remove_const(list, val, type) \
+	do { \
+		type var = (val); \
+		al_remove_val((list), &var); \
+	} while(0)
+
 ArrayList *al_alloc() {
     ArrayList *list = calloc(1, sizeof(*list));
     return list;
 }
 
-ArrayList *al_create(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function) {
-    ArrayList *list = al_alloc();
-    if(!list) return NULL;
-    list->elements = calloc(256, size_elements);
-    if(!(list->elements)) {
-        free(list);
-        return NULL;
-    }
-    list->len = 256;
-    list->size_elements = size_elements;
-	if(compare_function) list->compare_function = compare_function;
-	else list->compare_function = &memcmp;
-	list->destroy_function = destroy_function;
-    return list;
+ArrayList *al_create(size_t size_elements) {
+    return al_create_full(size_elements, NULL, NULL);
 }
 
-ArrayList *al_create_sized(size_t size_elements, size_t len, compare_fn compare_function, destroy_fn destroy_function) {
+ArrayList *al_create_sized(size_t size_elements, size_t len) {
     ArrayList *list = al_alloc();
     if(!list) return NULL;
     list->elements = calloc(len, size_elements);
@@ -481,6 +506,29 @@ ArrayList *al_create_sized(size_t size_elements, size_t len, compare_fn compare_
         return NULL;
     }
     list->len = len;
+    list->size_elements = size_elements;
+	list->compare_function = &memcmp;
+	list->destroy_function = NULL;
+    return list;
+}
+
+ArrayList *al_create_comparator(size_t size_elements, compare_fn compare_function) {
+	return al_create_full(size_elements, compare_function, NULL);
+}
+
+ArrayList *al_create_destroyer(size_t size_elements, destroy_fn destroy_function) {
+	return al_create_full(size_elements, NULL, destroy_function);
+}
+
+ArrayList *al_create_full(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function) {
+    ArrayList *list = al_alloc();
+    if(!list) return NULL;
+    list->elements = calloc(256, size_elements);
+    if(!(list->elements)) {
+        free(list);
+        return NULL;
+    }
+    list->len = 256;
     list->size_elements = size_elements;
 	if(compare_function) list->compare_function = compare_function;
 	else list->compare_function = &memcmp;
@@ -499,6 +547,16 @@ bool al_realloc(ArrayList *list) {
     return true;
 }
 
+void al_change_comparator(ArrayList *list, compare_fn compare_function) {
+	if(!list || !compare_function) return;
+	list->compare_function = compare_function;
+}
+
+void al_change_destroyer(ArrayList *list, destroy_fn destroy_function) {
+	if(!list || !destroy_function) return;
+	list->destroy_function = destroy_function;
+}
+
 //This function does not increment list count
 bool al_input_unsafe(ArrayList *list, void *new_element, size_t position) {
     if(!list || !new_element) return false;
@@ -507,6 +565,10 @@ bool al_input_unsafe(ArrayList *list, void *new_element, size_t position) {
     uint8_t *dest = (uint8_t *)list->elements + (list->size_elements * position);
     memmove(dest, (uint8_t *)new_element, list->size_elements);
     return true;
+}
+
+bool al_insert(ArrayList *list, void *new_element) {
+	return al_add(list, new_element);
 }
 
 bool al_add(ArrayList *list, void *new_element) {
@@ -578,7 +640,9 @@ bool al_update(ArrayList *list, void *update, size_t pos) {
 
 ArrayList *al_copy_list(ArrayList *list) {
     if(!list) return NULL;
-    ArrayList *cpy = al_create_sized(list->size_elements, list->len, list->compare_function, list->destroy_function);
+    ArrayList *cpy = al_create_sized(list->size_elements, list->len);
+	al_change_comparator(cpy, list->compare_function);
+	al_change_destroyer(cpy, list->destroy_function);
 	memmove(cpy->elements, list->elements, list->count * list->size_elements);
 	cpy->count = list->count;
     return cpy;
@@ -735,7 +799,19 @@ LinkedList *ll_alloc() {
     return list;
 }
 
-LinkedList *ll_create(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function) {
+LinkedList *ll_create(size_t size_elements) {
+	return ll_create_full(size_elements, NULL, NULL);
+}
+
+LinkedList *ll_create_comparator(size_t size_elements, compare_fn compare_function) {
+	return ll_create_full(size_elements, compare_function, NULL);
+}
+
+LinkedList *ll_create_destroyer(size_t size_elements, destroy_fn destroy_function) {
+	return ll_create_full(size_elements, NULL, destroy_function);
+}
+
+LinkedList *ll_create_full(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function) {
     LinkedList *list = ll_alloc();
     if(!list) return NULL;
     list->size_elements = size_elements;
@@ -743,6 +819,16 @@ LinkedList *ll_create(size_t size_elements, compare_fn compare_function, destroy
 	else list->compare_function = &memcmp;
 	list->destroy_function = destroy_function;
     return list;
+}
+
+void ll_change_comparator(LinkedList *list, compare_fn compare_function) {
+	if(!list || !compare_function) return;
+	list->compare_function = compare_function;
+}
+
+void ll_change_destroyer(LinkedList *list, destroy_fn destroy_function) {
+	if(!list || !destroy_function) return;
+	list->destroy_function = destroy_function;
 }
 
 LLNode *ll_create_node(void *val, size_t size_elements) {
@@ -860,7 +946,7 @@ bool ll_add_many(LinkedList *list, void *elements, size_t elements_count) {
 
 LinkedList *ll_copy_list(LinkedList *list) {
 	if(!list) return NULL;
-	LinkedList *new_l = ll_create(list->size_elements, list->compare_function, list->destroy_function);
+	LinkedList *new_l = ll_create_full(list->size_elements, list->compare_function, list->destroy_function);
 	if(!new_l) return NULL;
 	LLNode *p = list->head;
 	for(size_t i = 0; i < list->count; i++) {
@@ -883,7 +969,7 @@ void ll_concat_list(LinkedList *list1, LinkedList *list2) {
 
 LinkedList *ll_concat_list_new(LinkedList *list1, LinkedList *list2) {
 	if(!list1 || !list2) return NULL;
-	LinkedList *new_l = ll_create(list1->size_elements, list1->compare_function, list1->destroy_function);
+	LinkedList *new_l = ll_create_full(list1->size_elements, list1->compare_function, list1->destroy_function);
 	if(!new_l) return NULL;
 	LLNode *p = list1->head;
 	for(size_t i = 0; i < list1->count; i++) {
@@ -1055,10 +1141,22 @@ void ll_destroy(LinkedList **list) {
     *list = NULL;
 }
 
-HashSet *hs_create(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function) {
+HashSet *hs_create(size_t size_elements) {
+	return hs_create_full(size_elements, NULL, NULL);
+}
+
+HashSet *hs_create_comparator(size_t size_elements, compare_fn compare_function) {
+	return hs_create_full(size_elements, compare_function, NULL);
+}
+
+HashSet *hs_create_destroyer(size_t size_elements, destroy_fn destroy_function) {
+	return hs_create_full(size_elements, NULL, destroy_function);
+}
+
+HashSet *hs_create_full(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function) {
     HashSet *hs = malloc(sizeof(*hs));
     if(!hs) return NULL;
-    hs->list = al_create(sizeof(HashEntry), NULL, NULL);
+    hs->list = al_create(sizeof(HashEntry));
     if(!hs->list) {
         free(hs);
         return NULL;
@@ -1074,6 +1172,16 @@ HashSet *hs_create(size_t size_elements, compare_fn compare_function, destroy_fn
 	else hs->compare_function = &memcmp;
 	hs->destroy_function = destroy_function;
     return hs;
+}
+
+void hs_change_comparator(HashSet *hs, compare_fn compare_function) {
+	if(!hs || !compare_function) return;
+	hs->compare_function = compare_function;
+}
+
+void hs_change_destroyer(HashSet *hs, destroy_fn destroy_function) {
+	if(!hs || !destroy_function) return;
+	hs->destroy_function = destroy_function;
 }
 
 uint64_t hs_hash_function(void *val, size_t size_element) {
@@ -1106,13 +1214,13 @@ bool hs_add_val(HashSet *hs, void *val, size_t position) {
     if(!ith->valid_entry)
         ith->valid_entry = true;
     if(ith->element == NULL)
-        ith->element = ll_create(hs->size_elements, hs->compare_function, hs->destroy_function);
+        ith->element = ll_create_full(hs->size_elements, hs->compare_function, hs->destroy_function);
     return ll_add_tail(ith->element, val);
 }
 
 bool hs_rehash(HashSet *hs) {
     if(!hs) return false;
-    ArrayList *new = al_create_sized(sizeof(HashEntry), hs->list->count * 2, NULL, NULL);
+    ArrayList *new = al_create_sized(sizeof(HashEntry), hs->list->count * 2);
     new->count = new->count;
     for(size_t i = 0; i < new->count; i++) {
         HashEntry*ith = al_get_ith(new, i);
@@ -1130,7 +1238,7 @@ bool hs_rehash(HashSet *hs) {
             HashEntry *new_entry = al_get_ith(new, ith);
             new_entry->valid_entry = true;
             if(!new_entry->element)
-                new_entry->element = ll_create(hs->size_elements, hs->compare_function, hs->destroy_function);
+                new_entry->element = ll_create_full(hs->size_elements, hs->compare_function, hs->destroy_function);
             ll_add_tail(new_entry->element, p->element);
         }
         ll_destroy(&elements);
@@ -1196,10 +1304,14 @@ HashMapPair *_hmp_create(void *key, void *value, size_t size_key, size_t size_va
 	return hmp;
 }
 
-HashMap *hm_create(size_t size_key, size_t size_value, compare_fn compare_key, compare_fn compare_value, destroy_fn destroy_key, destroy_fn destroy_value) {
+HashMap *hm_create(size_t size_key, size_t size_value) {
+	return hm_create_full(size_key, size_value, NULL, NULL, NULL, NULL);
+}
+
+HashMap *hm_create_full(size_t size_key, size_t size_value, compare_fn compare_key, compare_fn compare_value, destroy_fn destroy_key, destroy_fn destroy_value) {
 	HashMap *hm = malloc(sizeof(*hm));
 	if(!hm) return NULL;
-	hm->hs = hs_create(sizeof(HashMapPair), NULL, NULL);
+	hm->hs = hs_create(sizeof(HashMapPair));
 	if(!(hm->hs)) {
 		free(hm);
 		return NULL;
@@ -1447,7 +1559,19 @@ BinaryTreeNode *bt_create_node(void *val, size_t size_elements) {
 	return n;
 }
 
-BinaryTree *bt_create(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function) {
+BinaryTree *bt_create(size_t size_elements) {
+	return bt_create_full(size_elements, NULL, NULL);
+}
+
+BinaryTree *bt_create_comparator(size_t size_elements, compare_fn compare_function) {
+	return bt_create_full(size_elements, compare_function, NULL);
+}
+
+BinaryTree *bt_create_destroyer(size_t size_elements, destroy_fn destroy_function) {
+	return bt_create_full(size_elements, NULL, destroy_function);
+}
+
+BinaryTree *bt_create_full(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function) {
 	BinaryTree *bst = malloc(sizeof(*bst));
 	if(!bst) return NULL;
 	bst->root = NULL;
@@ -1456,6 +1580,16 @@ BinaryTree *bt_create(size_t size_elements, compare_fn compare_function, destroy
 	else bst->compare_function = &memcmp;
 	bst->destroy_function = destroy_function;
 	return bst;
+}
+
+void bt_change_comparator(BinaryTree *tree, compare_fn compare_function) {
+	if(!tree || !compare_function) return;
+	tree->compare_function = compare_function;
+}
+
+void bt_change_destroyer(BinaryTree *tree, destroy_fn destroy_function) {
+	if(!tree || !destroy_function) return;
+	tree->destroy_function = destroy_function;
 }
 
 int64_t bt_height(BinaryTreeNode *root) {
@@ -1562,12 +1696,12 @@ BinaryTreeNode *_bt_remove_internal(BinaryTree *root, BinaryTreeNode *node, void
 				node = aux;
 				to_free->left = NULL;
 				to_free->right = NULL;
-				bt_delete_node(to_free, root->destroy_function);
+				bt_destroy_node(to_free, root->destroy_function);
 				return node;
 			}
 			aux = node;
 			node = NULL;
-			bt_delete_node(aux, root->destroy_function);
+			bt_destroy_node(aux, root->destroy_function);
         }
 		else {
 			BinaryTreeNode *aux = node->left;
@@ -1688,23 +1822,27 @@ void bt_print(BinaryTree *root, int rows, int cols) {
 	_bt_print_internal(root->root, rows, cols);
 }
 
-void bt_delete_node(BinaryTreeNode *node, destroy_fn destroy_function) {
+void bt_destroy_node(BinaryTreeNode *node, destroy_fn destroy_function) {
 	if(!node) return;
-	bt_delete_node(node->left, destroy_function);
-	bt_delete_node(node->right, destroy_function);
+	bt_destroy_node(node->left, destroy_function);
+	bt_destroy_node(node->right, destroy_function);
 	if(destroy_function) destroy_function(node->element);
 	free(node->element);
 	free(node);
 }
 
-void bt_delete(BinaryTree **root) {
+void bt_destroy(BinaryTree **root) {
 	if(!root || !(*root)) return;
-	bt_delete_node((*root)->root, (*root)->destroy_function);
+	bt_destroy_node((*root)->root, (*root)->destroy_function);
 	free(*root);
 	*root = NULL;
 }
 
-AbstractTree *at_create(void *val, size_t size_elements, compare_fn compare_function, destroy_fn destroy_function) {
+AbstractTree *at_create(void *val, size_t size_elements) {
+	return at_create_full(val, size_elements, NULL, NULL);
+}
+
+AbstractTree *at_create_full(void *val, size_t size_elements, compare_fn compare_function, destroy_fn destroy_function) {
     AbstractTree* node = malloc(sizeof(*node));
     if(!node) return NULL;
 	node->element = malloc(size_elements);
@@ -1719,6 +1857,16 @@ AbstractTree *at_create(void *val, size_t size_elements, compare_fn compare_func
 	node->compare_function = compare_function;
 	node->destroy_function = destroy_function;
     return node;
+}
+
+void at_change_comparator(AbstractTree *tree, compare_fn compare_function) {
+	if(!tree || !compare_function) return;
+	tree->compare_function = compare_function;
+}
+
+void at_change_destroyer(AbstractTree *tree, destroy_fn destroy_function) {
+	if(!tree || !destroy_function) return;
+	tree->destroy_function = destroy_function;
 }
 
 void at_add_child(AbstractTree* parent, AbstractTree* child) {

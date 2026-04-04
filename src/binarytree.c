@@ -9,31 +9,53 @@ int64_t _bt_max_impl(int64_t a, int64_t b) {
 	return a > b ? a : b;
 }
 
-BinaryTreeNode *bt_create_node(void *val, size_t element_size) {
+BinaryTreeNode *bt_create_node(void *val, size_t size_elements) {
     BinaryTreeNode *n = malloc(sizeof(*n));
 	if(!n)
 		return NULL;
-    n->val = malloc(element_size);
-	if(!(n->val)) {
+    n->element = malloc(size_elements);
+	if(!(n->element)) {
 		free(n);
 		return NULL;
 	}
-    memcpy(n->val, val, element_size);
+    memcpy(n->element, val, size_elements);
 	n->left = NULL;
 	n->right = NULL;
 	n->height = 0;
 	return n;
 }
 
-BinaryTree *bt_create(size_t element_size, compare_fn compare_function, destroy_fn destroy_function) {
+BinaryTree *bt_create(size_t size_elements) {
+	return bt_create_full(size_elements, NULL, NULL);
+}
+
+BinaryTree *bt_create_comparator(size_t size_elements, compare_fn compare_function) {
+	return bt_create_full(size_elements, compare_function, NULL);
+}
+
+BinaryTree *bt_create_destroyer(size_t size_elements, destroy_fn destroy_function) {
+	return bt_create_full(size_elements, NULL, destroy_function);
+}
+
+BinaryTree *bt_create_full(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function) {
 	BinaryTree *bst = malloc(sizeof(*bst));
 	if(!bst) return NULL;
 	bst->root = NULL;
-	bst->size_element = element_size;
+	bst->size_elements = size_elements;
 	if(compare_function) bst->compare_function = compare_function;
 	else bst->compare_function = &memcmp;
 	bst->destroy_function = destroy_function;
 	return bst;
+}
+
+void bt_change_comparator(BinaryTree *tree, compare_fn compare_function) {
+	if(!tree || !compare_function) return;
+	tree->compare_function = compare_function;
+}
+
+void bt_change_destroyer(BinaryTree *tree, destroy_fn destroy_function) {
+	if(!tree || !destroy_function) return;
+	tree->destroy_function = destroy_function;
 }
 
 int64_t bt_height(BinaryTreeNode *root) {
@@ -104,8 +126,8 @@ BinaryTreeNode *_bt_rebalance(BinaryTreeNode*root) {
 
 BinaryTreeNode *_bt_insert_internal(BinaryTree *root, BinaryTreeNode *node, void *val) {
 	if(!root || !val) return NULL;
-	if(!node) return bt_create_node(val, root->size_element);
-    int res = root->compare_function(node->val, val, root->size_element);
+	if(!node) return bt_create_node(val, root->size_elements);
+    int res = root->compare_function(node->element, val, root->size_elements);
 	if(res < 0) {
 		BinaryTreeNode *temp = _bt_insert_internal(root, node->right, val);
 		if(temp) node->right = temp;
@@ -131,7 +153,7 @@ bool bt_insert(BinaryTree *root, void *val) {
 
 BinaryTreeNode *_bt_remove_internal(BinaryTree *root, BinaryTreeNode *node, void *val) {
     if(!root || !node || !val) return NULL;
-	int res = root->compare_function(node->val, val, root->size_element);
+	int res = root->compare_function(node->element, val, root->size_elements);
     if(res == 0) {
         if(!(node->left) || !(node->right)) {
 			BinaryTreeNode *aux = node->left ? node->left : node->right;
@@ -140,21 +162,21 @@ BinaryTreeNode *_bt_remove_internal(BinaryTree *root, BinaryTreeNode *node, void
 				node = aux;
 				to_free->left = NULL;
 				to_free->right = NULL;
-				bt_delete_node(to_free);
+				bt_destroy_node(to_free, root->destroy_function);
 				return node;
 			}
 			aux = node;
 			node = NULL;
-			bt_delete_node(aux);
+			bt_destroy_node(aux, root->destroy_function);
         }
 		else {
 			BinaryTreeNode *aux = node->left;
 			while(aux->right)
 				aux = aux->right;
-			void *temp = node->val;
-			node->val = aux->val;
-			aux->val = temp;
-			node->left = _bt_remove_internal(root, node->left, aux->val);
+			void *temp = node->element;
+			node->element = aux->element;
+			aux->element = temp;
+			node->left = _bt_remove_internal(root, node->left, aux->element);
 		}
     }
 	else if(res > 0)
@@ -176,7 +198,7 @@ bool bt_remove(BinaryTree *root, void *val) {
 
 BinaryTreeNode *_bt_search_internal(BinaryTree *root, BinaryTreeNode *node, void *val) {
 	if(!root || !node || !val) return NULL;
-    int res = root->compare_function(node->val, val, root->size_element);
+    int res = root->compare_function(node->element, val, root->size_elements);
 	if(res == 0)
         return node;
     if(res > 0) {
@@ -220,7 +242,7 @@ int _bt_display_tree(char ** buffer, BinaryTreeNode *no, int level, double h_pos
 	offset = 1.0 / pow(2, level + 2);
 
 	ptr = buffer[1 + level * 3] + col;
-	sprintf(ptr, "%03d", *(int*)no->val);
+	sprintf(ptr, "%03d", *(int*)no->element);
 	*(ptr + strlen(ptr)) = ' ';
 
 	if(no->left || no->right)
@@ -266,18 +288,18 @@ void bt_print(BinaryTree *root, int rows, int cols) {
 	_bt_print_internal(root->root, rows, cols);
 }
 
-void bt_delete_node(BinaryTreeNode *node, destroy_fn destroy_function) {
+void bt_destroy_node(BinaryTreeNode *node, destroy_fn destroy_function) {
 	if(!node) return;
-	bt_delete_node(node->left);
-	bt_delete_node(node->right);
-	if(destroy_function) destroy_function(node->val);
-	free(node->val);
+	bt_destroy_node(node->left, destroy_function);
+	bt_destroy_node(node->right, destroy_function);
+	if(destroy_function) destroy_function(node->element);
+	free(node->element);
 	free(node);
 }
 
-void bt_delete(BinaryTree **root) {
+void bt_destroy(BinaryTree **root) {
 	if(!root || !(*root)) return;
-	bt_delete_node((*root)->root, (*root)->destroy_function);
+	bt_destroy_node((*root)->root, (*root)->destroy_function);
 	free(*root);
 	*root = NULL;
 }

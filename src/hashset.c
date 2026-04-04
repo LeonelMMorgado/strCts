@@ -5,20 +5,32 @@
 #include <arraylist.h>
 #include <hashset.h>
 
-HashSet *hs_create(size_t element_size, compare_fn compare_function, destroy_fn destroy_function) {
+HashSet *hs_create(size_t size_elements) {
+	return hs_create_full(size_elements, NULL, NULL);
+}
+
+HashSet *hs_create_comparator(size_t size_elements, compare_fn compare_function) {
+	return hs_create_full(size_elements, compare_function, NULL);
+}
+
+HashSet *hs_create_destroyer(size_t size_elements, destroy_fn destroy_function) {
+	return hs_create_full(size_elements, NULL, destroy_function);
+}
+
+HashSet *hs_create_full(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function) {
     HashSet *hs = malloc(sizeof(*hs));
     if(!hs) return NULL;
-    hs->list = al_create(sizeof(HashEntry), NULL, NULL);
+    hs->list = al_create(sizeof(HashEntry));
     if(!hs->list) {
         free(hs);
         return NULL;
     }
-    for(size_t i = 0; i < hs->list->len; i++) {
+    for(size_t i = 0; i < hs->list->count; i++) {
         ((HashEntry *)hs->list->elements)[i].valid_entry = false;
         ((HashEntry *)hs->list->elements)[i].element = NULL;
     }
-    hs->list->count = hs->list->len;
-    hs->size_element = element_size;
+    hs->list->count = hs->list->count;
+    hs->size_elements = size_elements;
     hs->count = 0;
 	if(compare_function) hs->compare_function = compare_function;
 	else hs->compare_function = &memcmp;
@@ -26,23 +38,33 @@ HashSet *hs_create(size_t element_size, compare_fn compare_function, destroy_fn 
     return hs;
 }
 
-uint64_t hs_hash_function(void *val, size_t element_size) {
+void hs_change_comparator(HashSet *hs, compare_fn compare_function) {
+	if(!hs || !compare_function) return;
+	hs->compare_function = compare_function;
+}
+
+void hs_change_destroyer(HashSet *hs, destroy_fn destroy_function) {
+	if(!hs || !destroy_function) return;
+	hs->destroy_function = destroy_function;
+}
+
+uint64_t hs_hash_function(void *val, size_t size_element) {
     if(!val) return 0;
     uint64_t hash = 0;
     uint8_t *c = val;
-    for(size_t i = 0; i < element_size; i++)
+    for(size_t i = 0; i < size_element; i++)
         hash = (hash * 31) + c[i];
     return hash;
 }
 
-size_t hs_hash_val(HashSet *hs, void *val, size_t element_size) {
+size_t hs_hash_val(HashSet *hs, void *val, size_t size_element) {
     if(!hs || !val) return 0;
-    return hs_hash_function(val, element_size) % hs->list->len;
+    return hs_hash_function(val, size_element) % hs->list->count;
 }
 
 float hs_load_factor(HashSet *hs) {
     if(!hs) return -1;
-    return (float)hs->count/hs->list->len;
+    return (float)hs->count/hs->list->count;
 }
 
 bool hs_has(HashSet *hs, void *val, size_t position) {
@@ -56,31 +78,31 @@ bool hs_add_val(HashSet *hs, void *val, size_t position) {
     if(!ith->valid_entry)
         ith->valid_entry = true;
     if(ith->element == NULL)
-        ith->element = ll_create(hs->size_element, hs->compare_function, hs->destroy_function);
+        ith->element = ll_create_full(hs->size_elements, hs->compare_function, hs->destroy_function);
     return ll_add_tail(ith->element, val);
 }
 
 bool hs_rehash(HashSet *hs) {
     if(!hs) return false;
-    ArrayList *new = al_create_sized(sizeof(HashEntry), hs->list->len * 2, NULL, NULL);
-    new->count = new->len;
-    for(size_t i = 0; i < new->len; i++) {
+    ArrayList *new = al_create_sized(sizeof(HashEntry), hs->list->count * 2);
+    new->count = new->count;
+    for(size_t i = 0; i < new->count; i++) {
         HashEntry*ith = al_get_ith(new, i);
         ith->valid_entry = false;
         ith->element = NULL;
     }
-    for(size_t i = 0; i < hs->list->len; i++) {
+    for(size_t i = 0; i < hs->list->count; i++) {
         HashEntry *elements_at_i = al_get_ith(hs->list, i);
         if(!elements_at_i->valid_entry || !elements_at_i->element) continue;
 		LinkedList *elements = elements_at_i->element;
         LLNode *p = elements->head;
         if(!p) continue;
-        for(size_t j = 0; j < elements->len; j++) {
-            size_t ith = hs_hash_function(p->element, hs->size_element) % new->len;
+        for(size_t j = 0; j < elements->count; j++) {
+            size_t ith = hs_hash_function(p->element, hs->size_elements) % new->count;
             HashEntry *new_entry = al_get_ith(new, ith);
             new_entry->valid_entry = true;
             if(!new_entry->element)
-                new_entry->element = ll_create(hs->size_element, hs->compare_function, hs->destroy_function);
+                new_entry->element = ll_create_full(hs->size_elements, hs->compare_function, hs->destroy_function);
             ll_add_tail(new_entry->element, p->element);
         }
         ll_destroy(&elements);
@@ -92,7 +114,7 @@ bool hs_rehash(HashSet *hs) {
 
 bool hs_add(HashSet *hs, void *val) {
     if(!hs || !val) return false;
-    size_t pos = hs_hash_val(hs, val, hs->size_element);
+    size_t pos = hs_hash_val(hs, val, hs->size_elements);
     if(hs_has(hs, val, pos)) return false;
     if(hs_add_val(hs, val, pos)) hs->count++;
     if(hs_load_factor(hs) > HS_MAX_LOAD_FACTOR) return hs_rehash(hs);
@@ -101,7 +123,7 @@ bool hs_add(HashSet *hs, void *val) {
 
 bool hs_remove(HashSet *hs, void *val) {
     if(!hs || !val) return NULL;
-    HashEntry *ith = al_get_ith(hs->list, hs_hash_val(hs, val, hs->size_element));
+    HashEntry *ith = al_get_ith(hs->list, hs_hash_val(hs, val, hs->size_elements));
 	bool r = ll_remove_val(ith->element, val);
 	if(r) hs->count--;
 	return r;
@@ -120,7 +142,7 @@ size_t hs_size(HashSet *hs) {
 bool hs_destroy(HashSet **hs) {
     if(!hs) return false;
     if(!*hs) return false;
-    for(size_t i = 0; i < (*hs)->list->len; i++) {
+    for(size_t i = 0; i < (*hs)->list->count; i++) {
 		LinkedList *list = (((HashEntry*)al_get_ith((*hs)->list, i))->element);
         ll_destroy(&list);
 	}
