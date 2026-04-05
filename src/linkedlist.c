@@ -270,10 +270,8 @@ bool ll_remove_val(LinkedList *list, void *val) {
     LLNode *next = p->next;
     before->next = next;
     next->before = before;
-    if(p == list->head)
-        list->head = next;
-    if(p == list->tail)
-        list->tail = before;
+    if(p == list->head) list->head = next;
+    if(p == list->tail) list->tail = before;
 	free(p->element);
     free(p);
     list->count--;
@@ -299,10 +297,8 @@ bool ll_remove_at(LinkedList *list, size_t pos, void *out_ptr) {
     LLNode *next = p->next;
     before->next = next;
     next->before = before;
-    if(p == list->head)
-        list->head = next;
-    if(p == list->tail)
-        list->tail = before;
+    if(p == list->head) list->head = next;
+    if(p == list->tail) list->tail = before;
 	if(out_ptr) memmove(out_ptr, p->element, list->size_elements);
 	free(p->element);
     free(p);

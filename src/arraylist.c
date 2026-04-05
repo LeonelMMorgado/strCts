@@ -176,8 +176,8 @@ ArrayList *al_concat_list_new(ArrayList *l1, ArrayList *l2) {
     ArrayList *lret = al_alloc();
     if(!lret) return NULL;
     uint64_t n_size = l1->count + l2->count;
-    uint64_t i = 1;
-    for(i; i < n_size; i *= 2);
+    uint64_t i = 256;
+	while(i < n_size) i *= 2;
     if(i < 256) i = 256;
     uint8_t *a = calloc(i, l1->size_elements);
     if(!a) {
@@ -233,6 +233,7 @@ void *al_get_ith(ArrayList *list, size_t i) {
 
 bool al_sort(ArrayList *list) {
 	//TODO:
+	return false;
 }
 
 void al_iterate(ArrayList *list, iter_fn func, void *arg) {
