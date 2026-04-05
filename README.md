@@ -15,7 +15,7 @@ destroy functions -> free every layer on the struct and nullify the pointer
 
 # TODO:
 
-- Add clean versions of create functions/functions to change inside functions
+- Fix void destroys
 
 - Refactor void structs to account for alignment
 

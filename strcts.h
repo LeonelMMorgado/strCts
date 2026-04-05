@@ -419,8 +419,6 @@ void pointer_destroy(void *val) {
 
 #define array_is_empty(array) (array_size((array)) == 0)
 
-#define array_sort(array) HEEEELP
-
 #define array_remove_at(array, pos, out_ptr) \
 	do { \
 		ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
@@ -1113,6 +1111,7 @@ LLNode *ll_get_node(LinkedList *list, void *val) {
 }
 
 LLNode *ll_get_node_at(LinkedList *list, size_t pos) {
+	if(!list) return NULL;
     if(pos == 0) return list->head;
     if(pos == list->count - 1) return list->tail;
     LLNode *p = list->head;
@@ -1162,7 +1161,7 @@ HashSet *hs_create_full(size_t size_elements, compare_fn compare_function, destr
         free(hs);
         return NULL;
     }
-    for(size_t i = 0; i < hs->list->count; i++) {
+    for(size_t i = 0; i < hs->list->len; i++) {
         ((HashEntry *)hs->list->elements)[i].valid_entry = false;
         ((HashEntry *)hs->list->elements)[i].element = NULL;
     }
@@ -1196,7 +1195,7 @@ uint64_t hs_hash_function(void *val, size_t size_element) {
 
 size_t hs_hash_val(HashSet *hs, void *val, size_t size_element) {
     if(!hs || !val) return 0;
-    return hs_hash_function(val, size_element) % hs->list->count;
+    return hs_hash_function(val, size_element) % hs->list->len;
 }
 
 float hs_load_factor(HashSet *hs) {
@@ -1336,6 +1335,7 @@ bool hm_add(HashMap *hm, void *key, void *value) {
 	if(!new_entry) return false;
 	size_t pos = hs_hash_val(hm->hs, key, hm->size_key);
 	if(hs_add_val(hm->hs, new_entry, hs_hash_val(hm->hs, key, hm->size_key))) hm->hs->count++;
+	free(new_entry);
 	if(hs_load_factor(hm->hs) > HS_MAX_LOAD_FACTOR) return hs_rehash(hm->hs);
 	return true;
 }
@@ -1520,6 +1520,8 @@ bool hm_destroy(HashMap **hm) {
 		do {
 			(*hm)->destroy_key(((HashMapPair*)(p->element))->key);
 			(*hm)->destroy_value(((HashMapPair*)(p->element))->value);
+			free(((HashMapPair*)(p->element))->key);
+			free(((HashMapPair*)(p->element))->value);
 		} while(p != ll->head);
 	}
 	if(!hs_destroy(&((*hm)->hs))) return false;

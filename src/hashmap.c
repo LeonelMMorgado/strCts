@@ -48,6 +48,7 @@ bool hm_add(HashMap *hm, void *key, void *value) {
 	if(!new_entry) return false;
 	size_t pos = hs_hash_val(hm->hs, key, hm->size_key);
 	if(hs_add_val(hm->hs, new_entry, hs_hash_val(hm->hs, key, hm->size_key))) hm->hs->count++;
+	free(new_entry)
 	if(hs_load_factor(hm->hs) > HS_MAX_LOAD_FACTOR) return hs_rehash(hm->hs);
 	return true;
 }
@@ -232,6 +233,8 @@ bool hm_destroy(HashMap **hm) {
 		do {
 			(*hm)->destroy_key(((HashMapPair*)(p->element))->key);
 			(*hm)->destroy_value(((HashMapPair*)(p->element))->value);
+			free(((HashMapPair*)(p->element))->key);
+			free(((HashMapPair*)(p->element))->value);
 		} while(p != ll->head);
 	}
 	if(!hs_destroy(&((*hm)->hs))) return false;

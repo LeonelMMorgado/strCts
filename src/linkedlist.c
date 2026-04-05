@@ -322,6 +322,7 @@ LLNode *ll_get_node(LinkedList *list, void *val) {
 }
 
 LLNode *ll_get_node_at(LinkedList *list, size_t pos) {
+	if(!list) return NULL;
     if(pos == 0) return list->head;
     if(pos == list->count - 1) return list->tail;
     LLNode *p = list->head;

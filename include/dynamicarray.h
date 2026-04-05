@@ -139,8 +139,6 @@ typedef struct _dynamic_array_header {
 
 #define array_is_empty(array) (array_size((array)) == 0)
 
-#define array_sort(array) HEEEELP
-
 #define array_remove_at(array, pos, out_ptr) \
 	do { \
 		ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \

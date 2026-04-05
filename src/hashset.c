@@ -25,7 +25,7 @@ HashSet *hs_create_full(size_t size_elements, compare_fn compare_function, destr
         free(hs);
         return NULL;
     }
-    for(size_t i = 0; i < hs->list->count; i++) {
+    for(size_t i = 0; i < hs->list->len; i++) {
         ((HashEntry *)hs->list->elements)[i].valid_entry = false;
         ((HashEntry *)hs->list->elements)[i].element = NULL;
     }
@@ -59,7 +59,7 @@ uint64_t hs_hash_function(void *val, size_t size_element) {
 
 size_t hs_hash_val(HashSet *hs, void *val, size_t size_element) {
     if(!hs || !val) return 0;
-    return hs_hash_function(val, size_element) % hs->list->count;
+    return hs_hash_function(val, size_element) % hs->list->len;
 }
 
 float hs_load_factor(HashSet *hs) {
