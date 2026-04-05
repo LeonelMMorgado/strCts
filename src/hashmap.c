@@ -7,9 +7,9 @@ HashMapPair *_hmp_create(void *key, void *value, size_t size_key, size_t size_va
 	hmp->key = malloc(size_key);
 	hmp->value = malloc(size_value);
 	if(!(hmp->key) || !(hmp->value)) {
-		free(hmp);
 		if(hmp->key) free(hmp->key);
 		if(hmp->value) free(hmp->value);
+		free(hmp);
 		return NULL;
 	}
 	memcpy(hmp->key, key, size_key);
@@ -47,7 +47,7 @@ bool hm_add(HashMap *hm, void *key, void *value) {
 	HashMapPair *new_entry = _hmp_create(key, value, hm->size_key, hm->size_value);
 	if(!new_entry) return false;
 	size_t pos = hs_hash_val(hm->hs, key, hm->size_key);
-	if(hs_add_val(hm->hs, new_entry, hs_hash_val(hm->hs, key, hm->size_key))) hm->hs->count++;
+	if(hs_add_val(hm->hs, new_entry, pos)) hm->hs->count++;
 	free(new_entry)
 	if(hs_load_factor(hm->hs) > HS_MAX_LOAD_FACTOR) return hs_rehash(hm->hs);
 	return true;
