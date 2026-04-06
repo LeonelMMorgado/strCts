@@ -15,6 +15,10 @@ destroy functions -> free every layer on the struct and nullify the pointer
 
 # TODO:
 
+- Rewrite array\_def
+
+- Array fit content
+
 - Fix void destroys
 
 - Refactor void structs to account for alignment
