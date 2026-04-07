@@ -47,10 +47,6 @@ typedef struct _llist {
 
 //HashSet definitions
 #define HS_MAX_LOAD_FACTOR 0.8
-typedef struct _hs_entry {
-    void *element;
-    bool valid_entry;
-} HashEntry;
 typedef struct _hash_table {
     ArrayList *list;
     uint16_t size_elements;
@@ -144,6 +140,7 @@ bool al_pop(ArrayList *list, void *out_ptr);
 bool al_remove_first(ArrayList *list, void *out_ptr);
 bool al_remove_val(ArrayList *list, void *val);
 bool al_clear(ArrayList *list);
+bool al_fit(ArrayList *list);
 bool al_destroy(ArrayList **list);
 
 //LinkedList functions
@@ -168,7 +165,7 @@ bool ll_remove_tail(LinkedList *list, void *out_ptr);
 bool ll_remove_head(LinkedList *list, void *out_ptr);
 bool ll_remove_val(LinkedList *list, void *val);
 bool ll_remove_at(LinkedList *list, size_t pos, void *out_ptr);
-void ll_destroy(LinkedList **list);
+bool ll_destroy(LinkedList **list);
 
 //HashSet functions
 HashSet *hs_create(size_t size_elements);
@@ -183,7 +180,8 @@ float hs_load_factor(HashSet *hs);
 bool hs_add_val(HashSet *hs, void *val, size_t position);//do not use, useful for hashmap only
 bool hs_rehash(HashSet *hs);//do not use, useful for hashmap only
 bool hs_add(HashSet *hs, void *val);
-bool hs_has(HashSet *hs, void *val, size_t position);
+bool hs_has_pos(HashSet *hs, void *val, size_t position);
+bool hs_has(HashSet *hs, void *val);
 bool hs_remove(HashSet *hs, void *val);
 bool   hs_is_empty(HashSet *hs);
 size_t hs_size(HashSet *hs);
@@ -221,8 +219,8 @@ bool bt_remove(BinaryTree *tree, void *val);
 BinaryTreeNode *bt_search(BinaryTree *tree, void *val);
 // BinaryTreeNode *bt_invert_tree(BinaryTreeNode *root);
 void bt_print(BinaryTree *tree, int rows, int cols);
-void bt_destroy_node(BinaryTreeNode *node, destroy_fn destroy_function);
-void bt_destroy(BinaryTree **tree);
+bool bt_destroy_node(BinaryTreeNode *node, destroy_fn destroy_function);
+bool bt_destroy(BinaryTree **tree);
 
 //AbstractTree functions
 AbstractTree *at_create(void *val, size_t size_elements);
@@ -237,57 +235,7 @@ bool at_destroy(AbstractTree **tree);
 }
 #endif
 
-#endif //_STRCTS_H
-
-#ifdef STRCTS_IMPLEMENTATION
-
-int int_compare(const void *val1, const void *val2, size_t size_element) {
-	int v1 = *(int*)val1;
-	int v2 = *(int*)val2;
-	return (v1 > v2) - (v1 < v2);
-}
-
-int uint_compare(const void *val1, const void *val2, size_t size_element) {
-	unsigned int v1 = *(unsigned int*)val1;
-	unsigned int v2 = *(unsigned int*)val2;
-	return (v1 > v2) - (v1 < v2);
-}
-
-int i64_compare(const void *val1, const void *val2, size_t size_element) {
-	int64_t v1 = *(int64_t*)val1;
-	int64_t v2 = *(int64_t*)val2;
-	return (v1 > v2) - (v1 < v2);
-}
-
-int u64_compare(const void *val1, const void *val2, size_t size_element) {
-	uint64_t v1 = *(uint64_t*)val1;
-	uint64_t v2 = *(uint64_t*)val2;
-	return (v1 > v2) - (v1 < v2);
-}
-
-int float_compare(const void *val1, const void *val2, size_t size_element) {
-	float v1 = *(float*)val1;
-	float v2 = *(float*)val2;
-	return (v1 > v2) - (v1 < v2);
-}
-
-int double_compare(const void *val1, const void *val2, size_t size_element) {
-	double v1 = *(double*)val1;
-	double v2 = *(double*)val2;
-	return (v1 > v2) - (v1 < v2);
-}
-
-int string_compare(const void *val1, const void *val2, size_t size_element) {
-	char *s1 = *(char**)val1;
-	char *s2 = *(char**)val2;
-	return strcmp(s1, s2);
-}
-
-void pointer_destroy(void *val) {
-	if(!val) return;
-	free(*(void **)val);
-}
-
+//This should be a part of implementation but errors starts popping up so imma leave it here :p
 #define array_create(array) \
 	do { \
 		ArrayHeader *h = malloc(sizeof(ArrayHeader) + (sizeof(*(array)) * INITIAL_ARRAY_CAPACITY)); \
@@ -413,7 +361,7 @@ void pointer_destroy(void *val) {
 		found; \
 	})
 
-#define array_has_at(array, val, pos) (array)[(pos)] == (val) //wont work with custom struct pointers
+#define array_has_at(array, val, pos) memcmp((array) + (pos), (val), sizeof(*(array))) == 0
 
 #define array_size(array) (((ArrayHeader*)(array)) - 1)->count
 
@@ -422,7 +370,7 @@ void pointer_destroy(void *val) {
 #define array_remove_at(array, pos, out_ptr) \
 	do { \
 		ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
-		if(out_ptr) *out_ptr = (array)[(pos)]; \
+		if((out_ptr)) *(typeof((array)))(out_ptr) = (array)[(pos)]; \
 		memmove((array) + (pos), (array) + (pos) + 1, sizeof(*(array)) * (h->count - (pos) - 1)); \
 		h->count -= 1; \
 	} while(0)
@@ -431,7 +379,7 @@ void pointer_destroy(void *val) {
 #define array_remove_at_fast(array, pos, out_ptr) \
 	do { \
 		ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
-		if(out_ptr) *out_ptr = (array)[(pos)]; \
+		if((out_ptr)) *(typeof((array)))(out_ptr) = (array)[(pos)]; \
 		(array)[(pos)] = (array)[h->count - 1]; \
 		h->count -= 1; \
 	} while(0)
@@ -439,24 +387,21 @@ void pointer_destroy(void *val) {
 #define array_pop(array, out_ptr) \
 	do { \
 		ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
-		if(out_ptr) *out_ptr = (array)[h->count - 1]; \
+		if((out_ptr)) *(typeof((array)))(out_ptr) = (array)[h->count - 1]; \
 		h->count -= 1; \
 	} while(0)
 
-#define array_remove_first(array, out_ptr) array_remove_at(array, 0, out_ptr)
+#define array_remove_first(array, out_ptr) array_remove_at((array), 0, (out_ptr))
 
 #define array_remove_val(array, val) \
-	({ \
-	 	bool deleted = false; \
+	do { \
 		ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
 		for(size_t i = 0; i < h->count; i++) { \
 			if((array)[i] == val) { \
 	 			array_remove_at((array), i, NULL); \
-				deleted = true; \
 			} \
 		} \
-		deleted; \
-	})
+	} while(0)
 
 #define array_clear(array) \
 	do { \
@@ -465,6 +410,14 @@ void pointer_destroy(void *val) {
 			(array)[i] = 0; \
 		} \
 		h->count = 0; \
+	} while(0)
+
+#define array_fit(array) \
+	do { \
+		ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
+		h = realloc(h, sizeof(ArrayHeader) + (h->count * sizeof(*(array)))); \
+		h->len = h->count; \
+		(array) = (void*)(h + 1); \
 	} while(0)
 
 #define array_destroy(array) \
@@ -485,6 +438,69 @@ void pointer_destroy(void *val) {
 		type var = (val); \
 		al_remove_val((list), &var); \
 	} while(0)
+
+#define bt_insert_const(bst, val, type) \
+	do {\
+		type var = (val);\
+		bt_insert((bst), &var);\
+	} while(0)
+
+#define bt_remove_const(bst, val, type) \
+	do {\
+		type var = (val);\
+		bt_remove((bst), &var);\
+	} while(0)
+
+#endif //_STRCTS_H
+
+#ifdef STRCTS_IMPLEMENTATION
+
+int int_compare(const void *val1, const void *val2, size_t size_element) {
+	int v1 = *(int*)val1;
+	int v2 = *(int*)val2;
+	return (v1 > v2) - (v1 < v2);
+}
+
+int uint_compare(const void *val1, const void *val2, size_t size_element) {
+	unsigned int v1 = *(unsigned int*)val1;
+	unsigned int v2 = *(unsigned int*)val2;
+	return (v1 > v2) - (v1 < v2);
+}
+
+int i64_compare(const void *val1, const void *val2, size_t size_element) {
+	int64_t v1 = *(int64_t*)val1;
+	int64_t v2 = *(int64_t*)val2;
+	return (v1 > v2) - (v1 < v2);
+}
+
+int u64_compare(const void *val1, const void *val2, size_t size_element) {
+	uint64_t v1 = *(uint64_t*)val1;
+	uint64_t v2 = *(uint64_t*)val2;
+	return (v1 > v2) - (v1 < v2);
+}
+
+int float_compare(const void *val1, const void *val2, size_t size_element) {
+	float v1 = *(float*)val1;
+	float v2 = *(float*)val2;
+	return (v1 > v2) - (v1 < v2);
+}
+
+int double_compare(const void *val1, const void *val2, size_t size_element) {
+	double v1 = *(double*)val1;
+	double v2 = *(double*)val2;
+	return (v1 > v2) - (v1 < v2);
+}
+
+int string_compare(const void *val1, const void *val2, size_t size_element) {
+	char *s1 = *(char**)val1;
+	char *s2 = *(char**)val2;
+	return strcmp(s1, s2);
+}
+
+void pointer_destroy(void *val) {
+	if(!val) return;
+	free(*(void **)val);
+}
 
 ArrayList *al_alloc() {
     ArrayList *list = calloc(1, sizeof(*list));
@@ -730,7 +746,7 @@ bool al_remove_at(ArrayList *list, size_t pos, void *out_ptr) {
     if(list->count == 0 || list->count <= pos) return false;
     void *src = (uint8_t*)list->elements + (list->size_elements * pos);
     if(out_ptr) memmove(out_ptr, src, list->size_elements);
-	//FIXME: for EVERY remove in the project, there can be memory leak if destroy_function is not used in member
+	if(list->destroy_function) list->destroy_function(src);
     memmove(src,
             (uint8_t *)src + list->size_elements,
             list->size_elements * (list->count - pos - 1));
@@ -743,6 +759,7 @@ bool al_remove_at_fast(ArrayList *list, size_t pos, void *out_ptr) {
 	if(list->count == 0 || list->count <= pos) return false;
 	void *src = (uint8_t*)list->elements + (list->size_elements * pos);
 	if(out_ptr) memmove(out_ptr, src, list->size_elements);
+	if(list->destroy_function) list->destroy_function(src);
 	memmove(src,
 			(uint8_t*)list->elements + (list->size_elements * (list->count - 1)),
 			list->size_elements);
@@ -763,7 +780,7 @@ bool al_remove_val(ArrayList *list, void *val) {
     if(!val) return false;
     size_t pos = 0;
     if(al_has(list, val, &pos)) {
-        return al_remove_at(list, pos, 0);;
+        return al_remove_at(list, pos, NULL);;
     }
     return false;
 }
@@ -775,6 +792,13 @@ bool al_clear(ArrayList *list) {
 	return true;
 }
 
+bool al_fit(ArrayList *list) {
+	if(!list) return false;
+	list->elements = realloc(list->elements, list->count * list->size_elements);
+	list->len = list->count;
+	return true;
+}
+
 void _destroy_iter(void *element, void *arg) {
 	ArrayList *list = arg;
 	list->destroy_function(element);
@@ -783,7 +807,7 @@ void _destroy_iter(void *element, void *arg) {
 bool al_destroy(ArrayList **list) {
     if(!list) return false;
     if(!*list) return false;
-	if((*list)->destroy_function) al_iterate(*list, &_destroy_iter, list);
+	if((*list)->destroy_function) al_iterate(*list, &_destroy_iter, *list);
     free((*list)->elements);
     (*list)->elements = NULL;
     (*list)->len = 0;
@@ -849,7 +873,7 @@ bool ll_add_tail(LinkedList *list, void *val) {
     if(!list || !val) return false;
     if(!list->head) {
         list->head = ll_create_node(val, list->size_elements);
-        if(!list->head) return NULL;
+        if(!list->head) return false;
         list->head->before = list->head;
         list->head->next = list->head;
         list->tail = list->head;
@@ -857,7 +881,7 @@ bool ll_add_tail(LinkedList *list, void *val) {
         return true;
     }
     list->tail->next = ll_create_node(val, list->size_elements);
-    if(!list->tail->next) return NULL;
+    if(!list->tail->next) return false;
     LLNode *p = list->tail->next;
     p->before = list->tail;
     list->tail = p;
@@ -871,7 +895,7 @@ bool ll_add_head(LinkedList *list, void *val) {
     if(!list || !val) return false;
     if(!list->head) {
         list->head = ll_create_node(val, list->size_elements);
-        if(!list->head) return NULL;
+        if(!list->head) return false;
 		list->head->next = list->head;
 		list->head->before = list->head;
         list->tail = list->head;
@@ -879,7 +903,7 @@ bool ll_add_head(LinkedList *list, void *val) {
         return true;
     }
     LLNode *p = ll_create_node(val, list->size_elements);
-    if(!p) return NULL;
+    if(!p) return false;
     p->next = list->head;
     list->head->before = p;
     list->head = p;
@@ -1001,6 +1025,7 @@ bool ll_remove_tail(LinkedList *list, void *out_ptr) {
     if(list->head == list->tail) {
         LLNode *head = list->head;
 		if(out_ptr) memmove(out_ptr, head->element, list->size_elements);
+		if(list->destroy_function) list->destroy_function(head->element);
 		free(head->element);
         free(list->head);
         list->head = NULL;
@@ -1013,6 +1038,7 @@ bool ll_remove_tail(LinkedList *list, void *out_ptr) {
     list->head->before = tail->before;
     list->tail = tail->before;
 	if(out_ptr) memmove(out_ptr, tail->element, list->size_elements);
+	if(list->destroy_function) list->destroy_function(tail->element);
 	free(tail->element);
     free(tail);
     list->count--;
@@ -1025,6 +1051,7 @@ bool ll_remove_head(LinkedList *list, void *out_ptr) {
     if(list->head == list->tail) {
         LLNode *head = list->head;
 		if(out_ptr) memmove(out_ptr, head->element, list->size_elements);
+		if(list->destroy_function) list->destroy_function(head->element);
 		free(head->element);
         free(list->head);
         list->head = NULL;
@@ -1037,6 +1064,7 @@ bool ll_remove_head(LinkedList *list, void *out_ptr) {
     list->tail->next = head->next;
     list->head = head->next;
 	if(out_ptr) memmove(out_ptr, head->element, list->size_elements);
+	if(list->destroy_function) list->destroy_function(head->element);
 	free(head->element);
     free(head);
     list->count--;
@@ -1048,11 +1076,12 @@ bool ll_remove_val(LinkedList *list, void *val) {
     LLNode *p = ll_get_node(list, val);
     if(!p) return false;
     if(p == list->head && p == list->tail) {
-        void *val = p->element;
         list->head = NULL;
         list->tail = NULL;
-		free(val);
+		if(list->destroy_function) list->destroy_function(p->element);
+		free(p->element);
         free(p);
+		list->count--;
         return true;
     }
     LLNode *before = p->before;
@@ -1061,6 +1090,7 @@ bool ll_remove_val(LinkedList *list, void *val) {
     next->before = before;
     if(p == list->head) list->head = next;
     if(p == list->tail) list->tail = before;
+	if(list->destroy_function) list->destroy_function(p->element);
 	free(p->element);
     free(p);
     list->count--;
@@ -1078,6 +1108,7 @@ bool ll_remove_at(LinkedList *list, size_t pos, void *out_ptr) {
         list->head = NULL;
         list->tail = NULL;
 		if(out_ptr) memmove(out_ptr, val, list->size_elements);
+		if(list->destroy_function) list->destroy_function(p->element);
 		free(val);
         free(p);
         return true;
@@ -1089,6 +1120,7 @@ bool ll_remove_at(LinkedList *list, size_t pos, void *out_ptr) {
     if(p == list->head) list->head = next;
     if(p == list->tail) list->tail = before;
 	if(out_ptr) memmove(out_ptr, p->element, list->size_elements);
+	if(list->destroy_function) list->destroy_function(p->element);
 	free(p->element);
     free(p);
     list->count--;
@@ -1116,13 +1148,13 @@ LLNode *ll_get_node_at(LinkedList *list, size_t pos) {
     return p;
 }
 
-void ll_destroy(LinkedList **list) {
-    if(!list) return;
-    if(!*list) return;
+bool ll_destroy(LinkedList **list) {
+    if(!list) return false;
+    if(!*list) return false;
     if(!(*list)->head) {
         free(*list);
         *list = NULL;
-        return;
+        return true;
     }
     LLNode *head = (*list)->head;
     LLNode *p = head;
@@ -1135,6 +1167,7 @@ void ll_destroy(LinkedList **list) {
     } while(p != head);
     free(*list);
     *list = NULL;
+	return true;
 }
 
 HashSet *hs_create(size_t size_elements) {
@@ -1152,16 +1185,14 @@ HashSet *hs_create_destroyer(size_t size_elements, destroy_fn destroy_function) 
 HashSet *hs_create_full(size_t size_elements, compare_fn compare_function, destroy_fn destroy_function) {
     HashSet *hs = malloc(sizeof(*hs));
     if(!hs) return NULL;
-    hs->list = al_create(sizeof(HashEntry));
+    hs->list = al_create(sizeof(LinkedList*));
     if(!hs->list) {
         free(hs);
         return NULL;
     }
-    for(size_t i = 0; i < hs->list->len; i++) {
-        ((HashEntry *)hs->list->elements)[i].valid_entry = false;
-        ((HashEntry *)hs->list->elements)[i].element = NULL;
-    }
-    hs->list->count = hs->list->count;
+	LinkedList **elements = hs->list->elements;
+    for(size_t i = 0; i < hs->list->len; i++) elements[i] = NULL;
+	hs->list->count = hs->list->len;
     hs->size_elements = size_elements;
     hs->count = 0;
 	if(compare_function) hs->compare_function = compare_function;
@@ -1196,46 +1227,55 @@ size_t hs_hash_val(HashSet *hs, void *val, size_t size_element) {
 
 float hs_load_factor(HashSet *hs) {
     if(!hs) return -1;
-    return (float)hs->count/hs->list->count;
+    return (float)hs->count/hs->list->len;
 }
 
-bool hs_has(HashSet *hs, void *val, size_t position) {
+bool hs_has_pos(HashSet *hs, void *val, size_t position) {
     if(!hs || !val) return false;
-    return ll_get_node(((HashEntry*)al_get_ith(hs->list, position))->element, val) != NULL;
+	if(!hs->list) return false;
+	LinkedList *entry = *(LinkedList**)al_get_ith(hs->list, position);
+	if(!entry) return false;
+    return ll_get_node(entry, val) != NULL;
+}
+
+bool hs_has(HashSet *hs, void *val) {
+	if(!hs || !val) return false;
+	size_t pos = hs_hash_val(hs, val, hs->size_elements);
+	return hs_has_pos(hs, val, pos);
 }
 
 bool hs_add_val(HashSet *hs, void *val, size_t position) {
     if(!hs || !val) return false;
-    HashEntry*ith = (HashEntry*)al_get_ith(hs->list, position);
-    if(!ith->valid_entry)
-        ith->valid_entry = true;
-    if(ith->element == NULL)
-        ith->element = ll_create_full(hs->size_elements, hs->compare_function, hs->destroy_function);
-    return ll_add_tail(ith->element, val);
+    LinkedList *ith = *(LinkedList**)al_get_ith(hs->list, position);
+    if(!ith) {
+        ith = ll_create_full(hs->size_elements, hs->compare_function, hs->destroy_function);
+		*(LinkedList**)al_get_ith(hs->list, position) = ith;
+	}
+	return ll_add_tail(ith, val);
 }
 
 bool hs_rehash(HashSet *hs) {
     if(!hs) return false;
-    ArrayList *new = al_create_sized(sizeof(HashEntry), hs->list->count * 2);
-    new->count = new->count;
-    for(size_t i = 0; i < new->count; i++) {
-        HashEntry*ith = al_get_ith(new, i);
-        ith->valid_entry = false;
-        ith->element = NULL;
-    }
-    for(size_t i = 0; i < hs->list->count; i++) {
-        HashEntry *elements_at_i = al_get_ith(hs->list, i);
-        if(!elements_at_i->valid_entry || !elements_at_i->element) continue;
-		LinkedList *elements = elements_at_i->element;
+    ArrayList *new = al_create_sized(sizeof(LinkedList*), hs->list->len * 2);
+    new->count = new->len;
+	memset(new->elements, 0, sizeof(LinkedList*) * new->len);
+    for(size_t i = 0; i < hs->list->len; i++) {
+        LinkedList *elements = *(LinkedList**)al_get_ith(hs->list, i);
+        if(!elements) continue;
+		if(!elements->head) {
+			ll_destroy(&elements);
+			continue;
+		}
         LLNode *p = elements->head;
-        if(!p) continue;
         for(size_t j = 0; j < elements->count; j++) {
-            size_t ith = hs_hash_function(p->element, hs->size_elements) % new->count;
-            HashEntry *new_entry = al_get_ith(new, ith);
-            new_entry->valid_entry = true;
-            if(!new_entry->element)
-                new_entry->element = ll_create_full(hs->size_elements, hs->compare_function, hs->destroy_function);
-            ll_add_tail(new_entry->element, p->element);
+            size_t ith = hs_hash_function(p->element, hs->size_elements) % new->len;
+            LinkedList *new_entry = *(LinkedList**)al_get_ith(new, ith);
+            if(!new_entry) {
+                new_entry = ll_create_full(hs->size_elements, hs->compare_function, hs->destroy_function);
+				*(LinkedList**)al_get_ith(new, ith) = new_entry;
+			}
+			ll_add_tail(new_entry, p->element);
+			p = p->next;
         }
         ll_destroy(&elements);
     }
@@ -1247,7 +1287,7 @@ bool hs_rehash(HashSet *hs) {
 bool hs_add(HashSet *hs, void *val) {
     if(!hs || !val) return false;
     size_t pos = hs_hash_val(hs, val, hs->size_elements);
-    if(hs_has(hs, val, pos)) return false;
+    if(hs_has_pos(hs, val, pos)) return false;
     if(hs_add_val(hs, val, pos)) hs->count++;
     if(hs_load_factor(hs) > HS_MAX_LOAD_FACTOR) return hs_rehash(hs);
     return true;
@@ -1255,8 +1295,8 @@ bool hs_add(HashSet *hs, void *val) {
 
 bool hs_remove(HashSet *hs, void *val) {
     if(!hs || !val) return NULL;
-    HashEntry *ith = al_get_ith(hs->list, hs_hash_val(hs, val, hs->size_elements));
-	bool r = ll_remove_val(ith->element, val);
+    LinkedList *ith = *(LinkedList**)al_get_ith(hs->list, hs_hash_val(hs, val, hs->size_elements));
+	bool r = ll_remove_val(ith, val);
 	if(r) hs->count--;
 	return r;
 }
@@ -1275,7 +1315,7 @@ bool hs_destroy(HashSet **hs) {
     if(!hs) return false;
     if(!*hs) return false;
     for(size_t i = 0; i < (*hs)->list->count; i++) {
-		LinkedList *list = (((HashEntry*)al_get_ith((*hs)->list, i))->element);
+		LinkedList *list = *(LinkedList**)al_get_ith((*hs)->list, i);
         ll_destroy(&list);
 	}
 	al_destroy(&((*hs)->list));
@@ -1284,24 +1324,14 @@ bool hs_destroy(HashSet **hs) {
     return true;
 }
 
-HashMapPair *_hmp_create(void *key, void *value, size_t size_key, size_t size_value) {
-	HashMapPair *hmp = malloc(sizeof(*hmp));
-	if(!hmp) return NULL;
-	hmp->key = malloc(size_key);
-	hmp->value = malloc(size_value);
-	if(!(hmp->key) || !(hmp->value)) {
-		if(hmp->key) free(hmp->key);
-		if(hmp->value) free(hmp->value);
-		free(hmp);
-		return NULL;
-	}
-	memcpy(hmp->key, key, size_key);
-	memcpy(hmp->value, value, size_value);
-	return hmp;
-}
-
 HashMap *hm_create(size_t size_key, size_t size_value) {
 	return hm_create_full(size_key, size_value, NULL, NULL, NULL, NULL);
+}
+
+void _hmp_destroy(void *element) {
+	HashMapPair *hmp = element;
+	free(hmp->key);
+	free(hmp->value);
 }
 
 HashMap *hm_create_full(size_t size_key, size_t size_value, compare_fn compare_key, compare_fn compare_value, destroy_fn destroy_key, destroy_fn destroy_value) {
@@ -1312,6 +1342,7 @@ HashMap *hm_create_full(size_t size_key, size_t size_value, compare_fn compare_k
 		free(hm);
 		return NULL;
 	}
+	hs_change_destroyer(hm->hs, _hmp_destroy);
 	hm->size_key = size_key;
 	hm->size_value = size_value;
 	
@@ -1327,11 +1358,18 @@ HashMap *hm_create_full(size_t size_key, size_t size_value, compare_fn compare_k
 bool hm_add(HashMap *hm, void *key, void *value) {
 	if(!hm || !key || !value) return false;
 	if(hm_has_key(hm, key)) return false;
-	HashMapPair *new_entry = _hmp_create(key, value, hm->size_key, hm->size_value);
-	if(!new_entry) return false;
+	HashMapPair new_entry = {0};
+	new_entry.key = malloc(hm->size_key);
+	new_entry.value = malloc(hm->size_value);
+	if(!new_entry.key || !new_entry.value) {
+		if(new_entry.key) free(new_entry.key);
+		if(new_entry.value) free(new_entry.value);
+		return false;
+	}
+	memcpy(new_entry.key, key, hm->size_key);
+	memcpy(new_entry.value, value, hm->size_value);
 	size_t pos = hs_hash_val(hm->hs, key, hm->size_key);
-	if(hs_add_val(hm->hs, new_entry, pos)) hm->hs->count++;
-	free(new_entry);
+	if(hs_add_val(hm->hs, &new_entry, pos)) hm->hs->count++;
 	if(hs_load_factor(hm->hs) > HS_MAX_LOAD_FACTOR) return hs_rehash(hm->hs);
 	return true;
 }
@@ -1339,10 +1377,8 @@ bool hm_add(HashMap *hm, void *key, void *value) {
 bool hm_has_key(HashMap *hm, void *key) {
 	if(!hm || !key) return false;
 	size_t pos = hs_hash_val(hm->hs, key, hm->size_key);
-    HashEntry*ith = (HashEntry*)al_get_ith(hm->hs->list, pos);
-	if(!(ith->valid_entry)) return false;
-	if(!(ith->element)) return false;
-	LinkedList *ll = ith->element;
+    LinkedList *ll = *(LinkedList**)al_get_ith(hm->hs->list, pos);
+	if(!ll) return false;
 	LLNode *head = ll->head;
 	if(!head) return false;
 	LLNode *p = head;
@@ -1361,10 +1397,8 @@ bool hm_has_value(HashMap *hm, void *value) {
 	bool found = false;
 	ArrayList *list = hm->hs->list;
 	for(size_t i = 0; i < list->count; i++) {
-		HashEntry entry = ((HashEntry*)(list->elements))[i];
-		if(entry.valid_entry == false) continue;
-		if(entry.element == NULL) continue;
-		LinkedList *ll = entry.element;
+		LinkedList *ll = ((LinkedList**)(list->elements))[i];
+		if(!ll) continue;
 		LLNode *head = ll->head;
 		if(!head) continue;
 		LLNode *p = head;
@@ -1383,10 +1417,8 @@ bool hm_has_value(HashMap *hm, void *value) {
 void*hm_get_value(HashMap *hm, void *key) {
 	if(!hm || !key) return NULL;
 	size_t pos = hs_hash_val(hm->hs, key, hm->size_key);
-    HashEntry*ith = (HashEntry*)al_get_ith(hm->hs->list, pos);
-	if(!(ith->valid_entry)) return NULL;
-	if(!(ith->element)) return NULL;
-	LinkedList *ll = ith->element;
+    LinkedList *ll = *(LinkedList**)al_get_ith(hm->hs->list, pos);
+	if(!ll) return NULL;
 	LLNode *head = ll->head;
 	if(!head) return NULL;
 	LLNode *p = head;
@@ -1405,10 +1437,8 @@ void*hm_get_key(HashMap *hm, void *value) {
 	if(!hm || !value) return NULL;
 	ArrayList *list = hm->hs->list;
 	for(size_t i = 0; i < list->count; i++) {
-		HashEntry entry = ((HashEntry*)(list->elements))[i];
-		if(entry.valid_entry == false) continue;
-		if(entry.element == NULL) continue;
-		LinkedList *ll = entry.element;
+		LinkedList *ll = ((LinkedList**)(list->elements))[i];
+		if(!ll) continue;
 		LLNode *head = ll->head;
 		if(!head) continue;
 		LLNode *p = head;
@@ -1427,10 +1457,8 @@ void*hm_get_key(HashMap *hm, void *value) {
 bool hm_remove_key(HashMap *hm, void *key) {
 	if(!hm || !key) return false;
 	size_t pos = hs_hash_val(hm->hs, key, hm->size_key);
-    HashEntry*ith = (HashEntry*)al_get_ith(hm->hs->list, pos);
-	if(!(ith->valid_entry)) return false;
-	if(!(ith->element)) return false;
-	LinkedList *ll = ith->element;
+    LinkedList *ll = *(LinkedList**)al_get_ith(hm->hs->list, pos);
+	if(!ll) return false;
 	LLNode *head = ll->head;
 	if(!head) return false;
 	LLNode *p = head;
@@ -1442,7 +1470,13 @@ bool hm_remove_key(HashMap *hm, void *key) {
 		p = p->next;
 	} while(res != 0 && p != head); 
 	if(res == 0) {
-		return ll_remove_val(ll, hmp);
+	    if(hm->destroy_key) hm->destroy_key(hmp->key);
+	    if(hm->destroy_value) hm->destroy_value(hmp->value);
+	
+	    free(hmp->key);
+	    free(hmp->value);
+	
+	    return ll_remove_val(ll, hmp);
 	}
 	return false;
 }
@@ -1451,10 +1485,8 @@ bool hm_remove_value(HashMap *hm, void *value) {
 	if(!hm || !value) return false;
 	ArrayList *list = hm->hs->list;
 	for(size_t i = 0; i < list->count; i++) {
-		HashEntry entry = ((HashEntry*)(list->elements))[i];
-		if(entry.valid_entry == false) continue;
-		if(entry.element == NULL) continue;
-		LinkedList *ll = entry.element;
+		LinkedList *ll = ((LinkedList**)(list->elements))[i];
+		if(!ll) continue;
 		LLNode *head = ll->head;
 		if(!head) continue;
 		LLNode *p = head;
@@ -1466,7 +1498,13 @@ bool hm_remove_value(HashMap *hm, void *value) {
 			p = p->next;
 		} while(res != 0 && p != head);
 		if(res == 0) {
-			return ll_remove_val(ll, hmp);
+   			if(hm->destroy_key) hm->destroy_key(hmp->key);
+		    if(hm->destroy_value) hm->destroy_value(hmp->value);
+		
+		    free(hmp->key);
+		    free(hmp->value);
+		
+		    return ll_remove_val(ll, hmp);
 		}
 	}
 	return false;
@@ -1486,13 +1524,11 @@ size_t hm_struct_size(HashMap *hm) {
 	ArrayList *list = hm->hs->list;
 	size_t total = 0;
 	size_t structs = sizeof(HashMap) + sizeof(HashSet) + sizeof(ArrayList);
-	size_t counting = (list->count * sizeof(HashEntry)) + (hm->hs->count * (sizeof(HashMapPair) + hm->size_key + hm->size_value));
+	size_t counting = (list->count * sizeof(LinkedList*)) + (hm->hs->count * (sizeof(HashMapPair) + hm->size_key + hm->size_value));
 	for(size_t i = 0; i < list->count; i++) {
-		HashEntry ith = ((HashEntry*)(list->elements))[i];
-		if(ith.valid_entry == false) continue;
-		if(ith.element == NULL) continue;
+		LinkedList *ll = ((LinkedList**)(list->elements))[i];
+		if(!ll) continue;
 		structs += sizeof(LinkedList);
-		LinkedList *ll = ith.element;
 		LLNode *head = ll->head;
 		LLNode *p = head;
 		do {
@@ -1507,17 +1543,15 @@ size_t hm_struct_size(HashMap *hm) {
 
 bool hm_destroy(HashMap **hm) {
 	if(!hm || !*hm) return false;
-	for(size_t i = 0; i < (*hm)->hs->list->count; i++) {
-		HashEntry ith = ((HashEntry*)((*hm)->hs->list->elements))[i];
-		if(ith.valid_entry == false) continue;
-		if(ith.element == NULL) continue;
-		LinkedList *ll = ith.element;
+	for(size_t i = 0; i < (*hm)->hs->list->len; i++) {
+		LinkedList *ll = ((LinkedList**)((*hm)->hs->list->elements))[i];
+		if(!ll) continue;
 		LLNode *p = ll->head;
 		do {
-			(*hm)->destroy_key(((HashMapPair*)(p->element))->key);
-			(*hm)->destroy_value(((HashMapPair*)(p->element))->value);
-			free(((HashMapPair*)(p->element))->key);
-			free(((HashMapPair*)(p->element))->value);
+			HashMapPair* element = p->element;
+			if((*hm)->destroy_key) (*hm)->destroy_key(element->key);
+			if((*hm)->destroy_value) (*hm)->destroy_value(element->value);
+			p = p->next;
 		} while(p != ll->head);
 	}
 	if(!hs_destroy(&((*hm)->hs))) return false;
@@ -1526,17 +1560,6 @@ bool hm_destroy(HashMap **hm) {
 	return true;
 }
 
-#define bt_insert_const(bst, val, type) \
-	do {\
-		type var = (val);\
-		bt_insert((bst), &var);\
-	} while(0)
-
-#define bt_remove_const(bst, val, type) \
-	do {\
-		type var = (val);\
-		bt_remove((bst), &var);\
-	} while(0)
 
 int64_t _bt_max_impl(int64_t a, int64_t b) {
 	return a > b ? a : b;
@@ -1821,20 +1844,22 @@ void bt_print(BinaryTree *root, int rows, int cols) {
 	_bt_print_internal(root->root, rows, cols);
 }
 
-void bt_destroy_node(BinaryTreeNode *node, destroy_fn destroy_function) {
-	if(!node) return;
+bool bt_destroy_node(BinaryTreeNode *node, destroy_fn destroy_function) {
+	if(!node) return false;
 	bt_destroy_node(node->left, destroy_function);
 	bt_destroy_node(node->right, destroy_function);
 	if(destroy_function) destroy_function(node->element);
 	free(node->element);
 	free(node);
+	return true;
 }
 
-void bt_destroy(BinaryTree **root) {
-	if(!root || !(*root)) return;
+bool bt_destroy(BinaryTree **root) {
+	if(!root || !(*root)) return false;
 	bt_destroy_node((*root)->root, (*root)->destroy_function);
 	free(*root);
 	*root = NULL;
+	return true;
 }
 
 AbstractTree *at_create(void *val, size_t size_elements) {
@@ -1911,4 +1936,325 @@ bool at_destroy(AbstractTree **root) {
 }
 
 #endif //STRCTS_IMPLEMENTATION
+
+#ifdef STRCTS_TEST
+
+#define TEST(cond, msg) \
+    do { \
+        if (!(cond)) { \
+            printf("FAIL: %s\n", msg); \
+            exit(1); \
+        } else { \
+            printf("PASS: %s\n", msg); \
+        } \
+    } while(0)
+
+void test_array() {
+    int *arr = NULL;
+
+    // ---- create + add ----
+    array_add(arr, 10);
+    array_add(arr, 20);
+    array_add(arr, 30);
+
+    TEST(array_size(arr) == 3, "array_add increases size");
+    TEST(arr[0] == 10 && arr[1] == 20 && arr[2] == 30, "array_add stores values");
+
+    // ---- add at position ----
+    array_add_at(arr, 15, 1);
+    TEST(array_size(arr) == 4, "array_add_at increases size");
+    TEST(arr[1] == 15, "array_add_at inserts correctly");
+
+    // ---- add many ----
+    int more[] = {40, 50, 60};
+    array_add_many(arr, more, 3);
+
+    TEST(array_size(arr) == 7, "array_add_many works");
+    TEST(arr[4] == 40 && arr[6] == 60, "array_add_many values correct");
+
+    // ---- add many at position ----
+    int more2[] = {100, 200};
+    array_add_many_at(arr, more2, 2, 2);
+
+    TEST(array_size(arr) == 9, "array_add_many_at size");
+    TEST(arr[2] == 100 && arr[3] == 200, "array_add_many_at values");
+
+    // ---- has ----
+    size_t pos = 0;
+    TEST(array_has(arr, 200, &pos), "array_has finds element");
+    TEST(arr[pos] == 200, "array_has correct position");
+
+    // ---- remove at ----
+	int out;
+    array_remove_at(arr, 2, &out);
+    TEST(out == 100, "array_remove_at returns correct value");
+    TEST(array_size(arr) == 8, "array_remove_at reduces size");
+
+    // ---- remove fast ----
+    int last_before = arr[array_size(arr) - 1];
+    array_remove_at_fast(arr, 1, &out);
+    TEST(array_size(arr) == 7, "array_remove_at_fast reduces size");
+    TEST(arr[1] == last_before, "array_remove_at_fast swaps with last");
+
+    // ---- pop ----
+    array_pop(arr, &out);
+    TEST(array_size(arr) == 6, "array_pop reduces size");
+
+    // ---- remove value ----
+    array_remove_val(arr, 50);
+    TEST(!array_has(arr, 50, &pos), "array_remove_val removes value");
+
+    // ---- clear ----
+    array_clear(arr);
+    TEST(array_size(arr) == 0, "array_clear resets size");
+    TEST(array_is_empty(arr), "array_is_empty works");
+
+    // ---- reuse after clear ----
+    array_add(arr, 999);
+    TEST(array_size(arr) == 1 && arr[0] == 999, "array works after clear");
+
+    // ---- destroy ----
+    array_destroy(arr);
+    TEST(arr == NULL, "array_destroy sets NULL");
+}
+
+void _sum_iter(void *e, void *arg) {
+    *(int*)arg += *(int*)e;
+}
+
+void test_al() {
+    ArrayList *list = al_create(sizeof(int));
+
+    TEST(al_is_empty(list), "ArrayList starts empty");
+
+    int vals[] = {10, 20, 30, 40, 50};
+
+    // add many
+    for (int i = 0; i < 5; i++)
+        al_add(list, &vals[i]);
+
+    TEST(al_size(list) == 5, "ArrayList add multiple");
+
+    // access
+    for (int i = 0; i < 5; i++) {
+        int *v = al_get_ith(list, i);
+        TEST(*v == vals[i], "ArrayList values correct");
+    }
+
+    // insert in middle
+    int x = 25;
+    al_add_at(list, &x, 2);
+    TEST(*(int*)al_get_ith(list, 2) == 25, "ArrayList insert at");
+
+    // iterate
+    int sum = 0;
+    al_iterate(list, _sum_iter, &sum);
+    TEST(sum == 175, "ArrayList iterate");
+
+    // has
+    size_t pos;
+    TEST(al_has(list, &x, &pos), "ArrayList has");
+    TEST(pos == 2, "ArrayList has correct position");
+
+    // remove
+    int out;
+    al_remove_at(list, 2, &out);
+    TEST(out == 25, "ArrayList remove_at value");
+
+    // fast remove
+    int last = *(int*)al_get_ith(list, al_size(list) - 1);
+    al_remove_at_fast(list, 1, &out);
+    TEST(*(int*)al_get_ith(list, 1) == last, "ArrayList fast remove swap");
+
+    // pop
+    al_pop(list, &out);
+    TEST(al_size(list) == 3, "ArrayList pop");
+
+    // clear
+    al_clear(list);
+    TEST(al_is_empty(list), "ArrayList clear");
+
+    al_destroy(&list);
+    TEST(list == NULL, "ArrayList destroy");
+}
+
+void test_ll() {
+    LinkedList *list = ll_create(sizeof(int));
+
+    int vals[] = {1, 2, 3, 4, 5};
+
+    // add head & tail
+    ll_add_head(list, &vals[0]);
+    ll_add_tail(list, &vals[1]);
+    ll_add_tail(list, &vals[2]);
+
+    TEST(list->count == 3, "LinkedList add head/tail");
+
+    // add at
+    ll_add_at(list, &vals[3], 1);
+    TEST(list->count == 4, "LinkedList add_at");
+
+    // find
+    LLNode *n = ll_get_node(list, &vals[3]);
+    TEST(n != NULL, "LinkedList find");
+
+    // remove head
+    int out;
+    ll_remove_head(list, &out);
+    TEST(out == 1, "LinkedList remove head");
+
+    // remove tail
+    ll_remove_tail(list, &out);
+    TEST(out == 3, "LinkedList remove tail");
+
+    // remove middle
+    ll_remove_val(list, &vals[3]);
+    TEST(list->count == 1, "LinkedList remove middle");
+
+    // iterate
+    int sum = 0;
+    ll_iterate(list, _sum_iter, &sum);
+    TEST(sum == 2, "LinkedList iterate");
+
+    ll_destroy(&list);
+    TEST(list == NULL, "LinkedList destroyed");
+}
+
+void test_set() {
+    HashSet *hs = hs_create(sizeof(int));
+
+    int vals[] = {10, 20, 30, 40};
+
+    // insert
+    for (int i = 0; i < 4; i++)
+        hs_add(hs, &vals[i]);
+
+    TEST(hs_size(hs) == 4, "HashSet insert");
+
+    // duplicate
+    TEST(!hs_add(hs, &vals[0]), "HashSet reject duplicate");
+
+    // has
+    TEST(hs_has(hs, &vals[2]), "HashSet has");
+
+    // remove
+    hs_remove(hs, &vals[2]);
+    TEST(hs_size(hs) == 3, "HashSet remove");
+
+    // stress insert
+    for (int i = 0; i < 1000; i++) {
+        int v = i + 100;
+        hs_add(hs, &v);
+    }
+
+    TEST(hs_size(hs) >= 1000, "HashSet stress insert");
+
+    hs_destroy(&hs);
+    TEST(hs == NULL, "HashSet destroy");
+}
+
+void test_map() {
+    HashMap *hm = hm_create(sizeof(int), sizeof(int));
+
+    int keys[] = {1, 2, 3};
+    int vals[] = {100, 200, 300};
+
+    // insert
+    for (int i = 0; i < 3; i++)
+        hm_add(hm, &keys[i], &vals[i]);
+
+    TEST(hm_size(hm) == 3, "HashMap insert");
+
+    // get
+    for (int i = 0; i < 3; i++) {
+        int *v = hm_get_value(hm, &keys[i]);
+        TEST(*v == vals[i], "HashMap get");
+    }
+
+    // has key/value
+    TEST(hm_has_key(hm, &keys[1]), "HashMap has key");
+    TEST(hm_has_value(hm, &vals[2]), "HashMap has value");
+
+    // remove key
+    hm_remove_key(hm, &keys[1]);
+    TEST(!hm_has_key(hm, &keys[1]), "HashMap remove key");
+
+    // remove value
+    hm_remove_value(hm, &vals[2]);
+    TEST(!hm_has_value(hm, &vals[2]), "HashMap remove value");
+
+    // stress
+    for (int i = 0; i < 1000; i++) {
+        int k = i + 10;
+        int v = i * 2;
+        hm_add(hm, &k, &v);
+    }
+
+    TEST(hm_size(hm) >= 1000, "HashMap stress");
+
+    hm_destroy(&hm);
+    TEST(hm == NULL, "HashMap destroy");
+}
+
+void test_bst() {
+    BinaryTree *bt = bt_create(sizeof(int));
+
+    int vals[] = {50, 30, 70, 20, 40, 60, 80};
+
+    // insert
+    for (int i = 0; i < 7; i++)
+        bt_insert(bt, &vals[i]);
+
+    // search
+    for (int i = 0; i < 7; i++) {
+        TEST(bt_search(bt, &vals[i]) != NULL, "BinaryTree search");
+    }
+
+    // remove leaf
+    bt_remove(bt, &vals[3]);
+    TEST(bt_search(bt, &vals[3]) == NULL, "BinaryTree remove leaf");
+
+    // remove root
+    bt_remove(bt, &vals[0]);
+    TEST(bt_search(bt, &vals[0]) == NULL, "BinaryTree remove root");
+
+    // balance check
+    TEST(bt_is_balanced(bt->root), "BinaryTree remains balanced");
+
+    bt_destroy(&bt);
+    TEST(bt == NULL, "BinaryTree destroy");
+}
+
+void test_absttree() {
+    int a = 1, b = 2, c = 3, d = 4;
+
+    AbstractTree *root = at_create(&a, sizeof(int));
+    AbstractTree *c1 = at_create(&b, sizeof(int));
+    AbstractTree *c2 = at_create(&c, sizeof(int));
+    AbstractTree *c3 = at_create(&d, sizeof(int));
+
+    // build structure
+    at_add_child(root, c1);
+    at_add_child(root, c2);
+    at_add_child(c1, c3);
+
+    TEST(root->child == c1, "AbstractTree first child");
+    TEST(c1->sibling == c2, "AbstractTree sibling");
+    TEST(c1->child == c3, "AbstractTree nested child");
+
+    at_destroy(&root);
+    TEST(root == NULL, "AbstractTree destroy");
+}
+
+void main_tests() {
+	test_array();
+    test_al();
+    test_ll();
+    test_set();
+    test_map();
+    test_bst();
+    test_absttree();
+}
+
+#endif //STRCTS_TEST
 
