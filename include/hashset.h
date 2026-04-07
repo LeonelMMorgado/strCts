@@ -7,11 +7,6 @@
 
 #define HS_MAX_LOAD_FACTOR 0.8
 
-typedef struct _hs_entry {
-    void *element;
-    bool valid_entry;
-} HashEntry;
-
 typedef struct _hash_table {
     ArrayList *list;
     uint16_t size_elements;
@@ -35,7 +30,8 @@ bool hs_rehash(HashSet *hs);//do not use, useful for hashmap only
 
 bool hs_add(HashSet *hs, void *val);
 
-bool hs_has(HashSet *hs, void *val, size_t position);
+bool hs_has_pos(HashSet *hs, void *val, size_t position);
+bool hs_has(HashSet *hs, void *val);
 
 bool hs_remove(HashSet *hs, void *val);
 

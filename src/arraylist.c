@@ -178,7 +178,6 @@ ArrayList *al_concat_list_new(ArrayList *l1, ArrayList *l2) {
     uint64_t n_size = l1->count + l2->count;
     uint64_t i = 256;
 	while(i < n_size) i *= 2;
-    if(i < 256) i = 256;
     uint8_t *a = calloc(i, l1->size_elements);
     if(!a) {
         free(lret);
@@ -249,7 +248,7 @@ bool al_remove_at(ArrayList *list, size_t pos, void *out_ptr) {
     if(list->count == 0 || list->count <= pos) return false;
     void *src = (uint8_t*)list->elements + (list->size_elements * pos);
     if(out_ptr) memmove(out_ptr, src, list->size_elements);
-	//FIXME: for EVERY remove in the project, there can be memory leak if destroy_function is not used in member
+	if(list->destroy_function) list->destroy_function(src);
     memmove(src,
             (uint8_t *)src + list->size_elements,
             list->size_elements * (list->count - pos - 1));
@@ -262,6 +261,7 @@ bool al_remove_at_fast(ArrayList *list, size_t pos, void *out_ptr) {
 	if(list->count == 0 || list->count <= pos) return false;
 	void *src = (uint8_t*)list->elements + (list->size_elements * pos);
 	if(out_ptr) memmove(out_ptr, src, list->size_elements);
+	if(list->destroy_function) list->destroy_function(src);
 	memmove(src,
 			(uint8_t*)list->elements + (list->size_elements * (list->count - 1)),
 			list->size_elements);
@@ -282,7 +282,7 @@ bool al_remove_val(ArrayList *list, void *val) {
     if(!val) return false;
     size_t pos = 0;
     if(al_has(list, val, &pos)) {
-        return al_remove_at(list, pos, 0);;
+        return al_remove_at(list, pos, NULL);;
     }
     return false;
 }
@@ -294,6 +294,13 @@ bool al_clear(ArrayList *list) {
 	return true;
 }
 
+bool al_fit(ArrayList *list) {
+	if(!list) return false;
+	list->elements = realloc(list->elements, list->count * list->size_elements);
+	list->len = list->count;
+	return true;
+}
+
 void _destroy_iter(void *element, void *arg) {
 	ArrayList *list = arg;
 	list->destroy_function(element);
@@ -302,7 +309,7 @@ void _destroy_iter(void *element, void *arg) {
 bool al_destroy(ArrayList **list) {
     if(!list) return false;
     if(!*list) return false;
-	if((*list)->destroy_function) al_iterate(*list, &_destroy_iter, list);
+	if((*list)->destroy_function) al_iterate(*list, &_destroy_iter, *list);
     free((*list)->elements);
     (*list)->elements = NULL;
     (*list)->len = 0;

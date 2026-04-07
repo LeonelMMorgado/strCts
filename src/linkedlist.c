@@ -60,7 +60,7 @@ bool ll_add_tail(LinkedList *list, void *val) {
     if(!list || !val) return false;
     if(!list->head) {
         list->head = ll_create_node(val, list->size_elements);
-        if(!list->head) return NULL;
+        if(!list->head) return false;
         list->head->before = list->head;
         list->head->next = list->head;
         list->tail = list->head;
@@ -68,7 +68,7 @@ bool ll_add_tail(LinkedList *list, void *val) {
         return true;
     }
     list->tail->next = ll_create_node(val, list->size_elements);
-    if(!list->tail->next) return NULL;
+    if(!list->tail->next) return false;
     LLNode *p = list->tail->next;
     p->before = list->tail;
     list->tail = p;
@@ -82,7 +82,7 @@ bool ll_add_head(LinkedList *list, void *val) {
     if(!list || !val) return false;
     if(!list->head) {
         list->head = ll_create_node(val, list->size_elements);
-        if(!list->head) return NULL;
+        if(!list->head) return false;
 		list->head->next = list->head;
 		list->head->before = list->head;
         list->tail = list->head;
@@ -90,7 +90,7 @@ bool ll_add_head(LinkedList *list, void *val) {
         return true;
     }
     LLNode *p = ll_create_node(val, list->size_elements);
-    if(!p) return NULL;
+    if(!p) return false;
     p->next = list->head;
     list->head->before = p;
     list->head = p;
@@ -212,6 +212,7 @@ bool ll_remove_tail(LinkedList *list, void *out_ptr) {
     if(list->head == list->tail) {
         LLNode *head = list->head;
 		if(out_ptr) memmove(out_ptr, head->element, list->size_elements);
+		if(list->destroy_function) list->destroy_function(head->element);
 		free(head->element);
         free(list->head);
         list->head = NULL;
@@ -224,6 +225,7 @@ bool ll_remove_tail(LinkedList *list, void *out_ptr) {
     list->head->before = tail->before;
     list->tail = tail->before;
 	if(out_ptr) memmove(out_ptr, tail->element, list->size_elements);
+	if(list->destroy_function) list->destroy_function(tail->element);
 	free(tail->element);
     free(tail);
     list->count--;
@@ -236,6 +238,7 @@ bool ll_remove_head(LinkedList *list, void *out_ptr) {
     if(list->head == list->tail) {
         LLNode *head = list->head;
 		if(out_ptr) memmove(out_ptr, head->element, list->size_elements);
+		if(list->destroy_function) list->destroy_function(head->element);
 		free(head->element);
         free(list->head);
         list->head = NULL;
@@ -248,6 +251,7 @@ bool ll_remove_head(LinkedList *list, void *out_ptr) {
     list->tail->next = head->next;
     list->head = head->next;
 	if(out_ptr) memmove(out_ptr, head->element, list->size_elements);
+	if(list->destroy_function) list->destroy_function(head->element);
 	free(head->element);
     free(head);
     list->count--;
@@ -259,11 +263,12 @@ bool ll_remove_val(LinkedList *list, void *val) {
     LLNode *p = ll_get_node(list, val);
     if(!p) return false;
     if(p == list->head && p == list->tail) {
-        void *val = p->element;
         list->head = NULL;
         list->tail = NULL;
-		free(val);
+		if(list->destroy_function) list->destroy_function(p->element);
+		free(p->element);
         free(p);
+		list->count--;
         return true;
     }
     LLNode *before = p->before;
@@ -272,6 +277,7 @@ bool ll_remove_val(LinkedList *list, void *val) {
     next->before = before;
     if(p == list->head) list->head = next;
     if(p == list->tail) list->tail = before;
+	if(list->destroy_function) list->destroy_function(p->element);
 	free(p->element);
     free(p);
     list->count--;
@@ -289,6 +295,7 @@ bool ll_remove_at(LinkedList *list, size_t pos, void *out_ptr) {
         list->head = NULL;
         list->tail = NULL;
 		if(out_ptr) memmove(out_ptr, val, list->size_elements);
+		if(list->destroy_function) list->destroy_function(p->element);
 		free(val);
         free(p);
         return true;
@@ -300,6 +307,7 @@ bool ll_remove_at(LinkedList *list, size_t pos, void *out_ptr) {
     if(p == list->head) list->head = next;
     if(p == list->tail) list->tail = before;
 	if(out_ptr) memmove(out_ptr, p->element, list->size_elements);
+	if(list->destroy_function) list->destroy_function(p->element);
 	free(p->element);
     free(p);
     list->count--;
@@ -327,13 +335,13 @@ LLNode *ll_get_node_at(LinkedList *list, size_t pos) {
     return p;
 }
 
-void ll_destroy(LinkedList **list) {
-    if(!list) return;
-    if(!*list) return;
+bool ll_destroy(LinkedList **list) {
+    if(!list) return false;
+    if(!*list) return false;
     if(!(*list)->head) {
         free(*list);
         *list = NULL;
-        return;
+        return true;
     }
     LLNode *head = (*list)->head;
     LLNode *p = head;
@@ -346,5 +354,6 @@ void ll_destroy(LinkedList **list) {
     } while(p != head);
     free(*list);
     *list = NULL;
+	return true;
 }
 

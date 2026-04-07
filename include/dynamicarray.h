@@ -133,7 +133,7 @@ typedef struct _dynamic_array_header {
 		found; \
 	})
 
-#define array_has_at(array, val, pos) (array)[(pos)] == (val) //wont work with custom struct pointers
+#define array_has_at(array, val, pos) memcmp((array) + (pos), (val), sizeof(*(array))) == 0
 
 #define array_size(array) (((ArrayHeader*)(array)) - 1)->count
 
@@ -142,7 +142,7 @@ typedef struct _dynamic_array_header {
 #define array_remove_at(array, pos, out_ptr) \
 	do { \
 		ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
-		if(out_ptr) *out_ptr = (array)[(pos)]; \
+		if((out_ptr)) *(typeof((array)))(out_ptr) = (array)[(pos)]; \
 		memmove((array) + (pos), (array) + (pos) + 1, sizeof(*(array)) * (h->count - (pos) - 1)); \
 		h->count -= 1; \
 	} while(0)
@@ -151,7 +151,7 @@ typedef struct _dynamic_array_header {
 #define array_remove_at_fast(array, pos, out_ptr) \
 	do { \
 		ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
-		if(out_ptr) *out_ptr = (array)[(pos)]; \
+		if((out_ptr)) *(typeof((array)))(out_ptr) = (array)[(pos)]; \
 		(array)[(pos)] = (array)[h->count - 1]; \
 		h->count -= 1; \
 	} while(0)
@@ -159,24 +159,21 @@ typedef struct _dynamic_array_header {
 #define array_pop(array, out_ptr) \
 	do { \
 		ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
-		if(out_ptr) *out_ptr = (array)[h->count - 1]; \
+		if((out_ptr)) *(typeof((array)))(out_ptr) = (array)[h->count - 1]; \
 		h->count -= 1; \
 	} while(0)
 
-#define array_remove_first(array, out_ptr) array_remove_at(array, 0, out_ptr)
+#define array_remove_first(array, out_ptr) array_remove_at((array), 0, (out_ptr))
 
 #define array_remove_val(array, val) \
-	({ \
-	 	bool deleted = false; \
+	do { \
 		ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
 		for(size_t i = 0; i < h->count; i++) { \
 			if((array)[i] == val) { \
 	 			array_remove_at((array), i, NULL); \
-				deleted = true; \
 			} \
 		} \
-		deleted; \
-	})
+	} while(0)
 
 #define array_clear(array) \
 	do { \
@@ -187,6 +184,14 @@ typedef struct _dynamic_array_header {
 		h->count = 0; \
 	} while(0)
 
+#define array_fit(array) \
+	do { \
+		ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
+		h = realloc(h, sizeof(ArrayHeader) + (h->count * sizeof(*(array)))); \
+		h->len = h->count; \
+		(array) = (void*)(h + 1); \
+	} while(0)
+
 #define array_destroy(array) \
 	do { \
 		ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
@@ -194,4 +199,5 @@ typedef struct _dynamic_array_header {
 		(array) = NULL; \
 	} while(0)
 
-#endif //_DYNAMIC_ARRAY_H
+#endif
+

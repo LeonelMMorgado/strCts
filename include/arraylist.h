@@ -67,6 +67,7 @@ bool al_remove_first(ArrayList *list, void *out_ptr);
 bool al_remove_val(ArrayList *list, void *val);
 
 bool al_clear(ArrayList *list);
+bool al_fit(ArrayList *list);
 bool al_destroy(ArrayList **list);
 
 #endif

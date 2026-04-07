@@ -1560,7 +1560,6 @@ bool hm_destroy(HashMap **hm) {
 	return true;
 }
 
-
 int64_t _bt_max_impl(int64_t a, int64_t b) {
 	return a > b ? a : b;
 }
