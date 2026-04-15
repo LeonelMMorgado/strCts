@@ -49,12 +49,13 @@ BinaryTree *bt_create_full(size_t size_elements, compare_fn compare_function, de
 }
 
 void bt_change_comparator(BinaryTree *tree, compare_fn compare_function) {
-	if(!tree || !compare_function) return;
+	if(!tree) return;
 	tree->compare_function = compare_function;
+	if(!compare_function) tree->compare_function = &memcmp;
 }
 
 void bt_change_destroyer(BinaryTree *tree, destroy_fn destroy_function) {
-	if(!tree || !destroy_function) return;
+	if(!tree) return;
 	tree->destroy_function = destroy_function;
 }
 

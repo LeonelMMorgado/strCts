@@ -9,8 +9,11 @@ You can use the library in the stb fashion or use it with its headers and source
 # Notes
 
 len => elements allocated
+
 count => elements in use
+
 size\_elements => size in bytes of elements stored
+
 destroy functions -> free every layer on the struct and nullify the pointer
 
 # TODO:

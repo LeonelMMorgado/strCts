@@ -25,12 +25,13 @@ AbstractTree *at_create_full(void *val, size_t size_elements, compare_fn compare
 }
 
 void at_change_comparator(AbstractTree *tree, compare_fn compare_function) {
-	if(!tree || !compare_function) return;
+	if(!tree) return;
 	tree->compare_function = compare_function;
+	if(!compare_function) tree->compare_function = &memcmp;
 }
 
 void at_change_destroyer(AbstractTree *tree, destroy_fn destroy_function) {
-	if(!tree || !destroy_function) return;
+	if(!tree) return;
 	tree->destroy_function = destroy_function;
 }
 

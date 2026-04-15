@@ -64,12 +64,13 @@ bool al_realloc(ArrayList *list) {
 }
 
 void al_change_comparator(ArrayList *list, compare_fn compare_function) {
-	if(!list || !compare_function) return;
+	if(!list) return;
 	list->compare_function = compare_function;
+	if(!compare_function) list->compare_function = &memcmp;
 }
 
 void al_change_destroyer(ArrayList *list, destroy_fn destroy_function) {
-	if(!list || !destroy_function) return;
+	if(!list) return;
 	list->destroy_function = destroy_function;
 }
 

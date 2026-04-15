@@ -32,12 +32,13 @@ LinkedList *ll_create_full(size_t size_elements, compare_fn compare_function, de
 }
 
 void ll_change_comparator(LinkedList *list, compare_fn compare_function) {
-	if(!list || !compare_function) return;
+	if(!list) return;
 	list->compare_function = compare_function;
+	if(!compare_function) list->compare_function = &memcmp;
 }
 
 void ll_change_destroyer(LinkedList *list, destroy_fn destroy_function) {
-	if(!list || !destroy_function) return;
+	if(!list) return;
 	list->destroy_function = destroy_function;
 }
 

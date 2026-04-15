@@ -37,12 +37,13 @@ HashSet *hs_create_full(size_t size_elements, compare_fn compare_function, destr
 }
 
 void hs_change_comparator(HashSet *hs, compare_fn compare_function) {
-	if(!hs || !compare_function) return;
+	if(!hs) return;
 	hs->compare_function = compare_function;
+	if(!compare_function) hs->compare_function = &memcmp;
 }
 
 void hs_change_destroyer(HashSet *hs, destroy_fn destroy_function) {
-	if(!hs || !destroy_function) return;
+	if(!hs) return;
 	hs->destroy_function = destroy_function;
 }
 
@@ -112,6 +113,7 @@ bool hs_rehash(HashSet *hs) {
 			ll_add_tail(new_entry, p->element);
 			p = p->next;
         }
+		ll_change_destroyer(elements, NULL);
         ll_destroy(&elements);
     }
     al_destroy(&(hs->list));
