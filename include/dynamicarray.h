@@ -194,9 +194,11 @@ typedef struct _dynamic_array_header {
 
 #define array_destroy(array) \
 	do { \
-		ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
-		free(h); \
-		(array) = NULL; \
+		if((array)) { \
+			ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
+			free(h); \
+			(array) = NULL; \
+		} \
 	} while(0)
 
 #endif

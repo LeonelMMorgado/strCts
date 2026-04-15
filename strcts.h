@@ -422,9 +422,11 @@ bool at_destroy(AbstractTree **tree);
 
 #define array_destroy(array) \
 	do { \
-		ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
-		free(h); \
-		(array) = NULL; \
+		if((array)) { \
+			ArrayHeader *h = (((ArrayHeader*)(array)) - 1); \
+			free(h); \
+			(array) = NULL; \
+		} \
 	} while(0)
 
 #define al_insert_const(list, val, type) \
